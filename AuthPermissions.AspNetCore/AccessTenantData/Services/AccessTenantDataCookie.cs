@@ -35,7 +35,10 @@ public class AccessTenantDataCookie : IAccessTenantDataCookie
     /// <exception cref="NullReferenceException"></exception>
     public void AddOrUpdateCookie(string value, int numMinutesBeforeCookieTimesOut)
     {
-        if (_cookiesIn == null) throw new ArgumentNullException(nameof(_cookiesIn));
+        if (_cookiesIn == null)
+        {
+            throw new ArgumentNullException(nameof(_cookiesIn));
+        }
 
         var cookieOptions = new CookieOptions
         {

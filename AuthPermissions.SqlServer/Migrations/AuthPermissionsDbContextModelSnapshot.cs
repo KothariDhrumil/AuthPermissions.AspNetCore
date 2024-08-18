@@ -21,7 +21,7 @@ namespace AuthPermissions.DataLayer.Migrations
                 .HasAnnotation("ProductVersion", "6.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.AuthUser", b =>
                 {
@@ -131,7 +131,7 @@ namespace AuthPermissions.DataLayer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TenantId"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TenantId"));
 
                     b.Property<byte[]>("ConcurrencyToken")
                         .IsConcurrencyToken()
