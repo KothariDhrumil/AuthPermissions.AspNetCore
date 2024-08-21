@@ -38,8 +38,11 @@ namespace AuthPermissions.BaseCode.PermissionsCode
         /// <returns></returns>
         public static bool ThisPermissionIsAllowed(this Type enumPermissionType, string packedPermissions, string permissionName)
         {
-            var permissionAsChar = (char)Convert.ChangeType(Enum.Parse(enumPermissionType, permissionName), typeof(char));
-            return packedPermissions.IsThisPermissionAllowed(permissionAsChar);
+            // var permissionAsChar = (char)Convert.ChangeType(Enum.Parse(enumPermissionType, permissionName), typeof(char));
+            //return packedPermissions.IsThisPermissionAllowed(permissionAsChar);
+
+            var permissionValue = (string)Convert.ChangeType(Enum.Parse(enumPermissionType, permissionName), typeof(string));
+            return packedPermissions.Split(",").Contains(permissionValue) || packedPermissions.Equals(PermissionConstants.AccessAllPermission);
         }
 
 

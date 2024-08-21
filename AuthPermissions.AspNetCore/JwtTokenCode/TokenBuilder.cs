@@ -67,8 +67,8 @@ namespace AuthPermissions.AspNetCore.JwtTokenCode
                     $"The {nameof(AuthPJwtConfiguration)}.{nameof(AuthPJwtConfiguration.RefreshTokenExpires)} must be set with a TimeSpan value.");
 
             var claims = await _claimsCalculator.GetClaimsForAuthUserAsync(userId);
-            var tokenAndDesc = GenerateJwtTokenHandler(userId, claims);
-            var token = tokenAndDesc.tokenHandler.CreateToken(tokenAndDesc.tokenDescriptor);
+            var (tokenHandler, tokenDescriptor) = GenerateJwtTokenHandler(userId, claims);
+            var token = tokenHandler.CreateToken(tokenDescriptor);
 
             var refreshToken = RefreshToken.CreateNewRefreshToken(userId, token.Id);
             _context.Add(refreshToken);
@@ -77,7 +77,7 @@ namespace AuthPermissions.AspNetCore.JwtTokenCode
 
             return new TokenAndRefreshToken
             {
-                Token = tokenAndDesc.tokenHandler.WriteToken(token),
+                Token = tokenHandler.WriteToken(token),
                 RefreshToken = refreshToken.TokenValue
             };
         }
