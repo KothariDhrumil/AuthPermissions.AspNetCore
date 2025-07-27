@@ -281,7 +281,7 @@ namespace AuthPermissions.AdminCode.Services
                                 nameof(databaseInfoName).CamelToPascal());
 
 
-                        hasOwnDb = parentTenant.HasOwnDb;
+                        hasOwnDb = false; // child will be part of same db as parent
                         databaseInfoName = parentTenant.DatabaseInfoName;
 
                         status.CombineStatuses(await CheckHasOwnDbIsValidAsync((bool)hasOwnDb, databaseInfoName));
@@ -677,6 +677,20 @@ namespace AuthPermissions.AdminCode.Services
                         $"The tenant wasn't moved but its {nameof(Tenant.HasOwnDb)} was changed to {hasOwnDb}.");
                 }
 
+                if (tenant.IsHierarchical)
+                {
+                    //We need to load the main tenant and any children and this is the simplest way to do that
+                    var tenantsWithChildren = await _context.Tenants
+                        .Include(x => x.Parent)
+                        .Include(x => x.Children)
+                        .Where(x => x.TenantFullName.StartsWith(tenant.TenantFullName))
+                        .ToListAsync();
+
+                    tenantsWithChildren
+                        .ForEach(x => x.UpdateShardingState(databaseInfoName, hasOwnDb));
+                  
+                }
+                
                 if (status.CombineStatuses(await CheckHasOwnDbIsValidAsync(hasOwnDb, databaseInfoName)).HasErrors)
                     return status;
 

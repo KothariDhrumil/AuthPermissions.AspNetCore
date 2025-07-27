@@ -361,6 +361,19 @@ namespace AuthPermissions.AspNetCore
             if (setupData.Options.TenantType.IsSharding())
             {
 
+                switch (setupData.Options.LinkToTenantType)
+                {
+                    case LinkToTenantTypes.OnlyAppUsers:
+                        setupData.Services.AddScoped<IGetDataKeyFromUser, GetDataKeyFromAppUserAccessTenantData>();
+                        break;
+                    case LinkToTenantTypes.AppAndHierarchicalUsers:
+                        setupData.Services
+                            .AddScoped<IGetDataKeyFromUser, GetDataKeyFromAppAndHierarchicalUsersAccessTenantData>();
+                        break;
+                    default:
+                        setupData.Services.AddScoped<IGetDataKeyFromUser, GetDataKeyFromUserNormal>();
+                        break;
+                }
             }
             else
             {

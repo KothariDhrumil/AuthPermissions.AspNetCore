@@ -23,7 +23,7 @@ public class ShardingOnlyTenantAddDto
     /// <summary>
     /// Defines if the tenant should have its own database - always true
     /// </summary>
-    public bool HasOwnDb => true;
+    public bool HasOwnDb { get; set; }
 
     /// <summary>
     /// Optional: List of tenant role names 
