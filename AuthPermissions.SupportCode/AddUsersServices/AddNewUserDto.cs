@@ -76,4 +76,19 @@ public class AddNewUserDto
     {
         return string.Join(",", Roles?.Select(x => x.Trim()) ?? Array.Empty<string>());
     }
+
+    /// <summary>
+    /// First Name Of the user
+    /// </summary>
+    public required string FirstName { get; set; }
+
+    /// <summary>
+    ///  Last Name of the user
+    /// </summary>
+    public required string LastName { get; set; }
+
+    /// <summary>
+    /// User's Designation
+    /// </summary>
+    public int? DesignationId { get; set; }
 }

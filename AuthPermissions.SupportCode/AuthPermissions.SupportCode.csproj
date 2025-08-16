@@ -13,6 +13,7 @@
   </ItemGroup>
 
 	<ItemGroup>
+    <ProjectReference Include="..\..\AngularAndWebApiProject\DealersAndDistributors\Domain\Domain.csproj" />
     <ProjectReference Include="..\AuthPermissions.AspNetCore\AuthPermissions.AspNetCore.csproj" />
     <ProjectReference Include="..\AuthPermissions.BaseCode\AuthPermissions.BaseCode.csproj" />
   </ItemGroup>

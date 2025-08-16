@@ -5,6 +5,7 @@ using AuthPermissions.AdminCode;
 using AuthPermissions.BaseCode.CommonCode;
 using AuthPermissions.BaseCode.DataLayer.Classes;
 using AuthPermissions.BaseCode.SetupCode;
+using Domain;
 using LocalizeMessagesAndErrors;
 using Microsoft.AspNetCore.Identity;
 using StatusGeneric;
@@ -22,9 +23,9 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
 {
     private readonly IAuthUsersAdminService _authUsersAdmin;
     private readonly IDefaultLocalizer _localizeDefault;
-    private readonly SignInManager<TIdentity> _signInManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IAuthTenantAdminService _tenantAdminService;
-    private readonly UserManager<TIdentity> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     /// <summary>
     /// ctor
@@ -35,7 +36,7 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
     /// <param name="signInManager"></param>
     /// <param name="localizeProvider"></param>
     public IndividualUserAddUserManager(IAuthUsersAdminService authUsersAdmin, IAuthTenantAdminService tenantAdminService,
-        UserManager<TIdentity> userManager, SignInManager<TIdentity> signInManager, IAuthPDefaultLocalizer localizeProvider)
+        UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IAuthPDefaultLocalizer localizeProvider)
     {
         _authUsersAdmin = authUsersAdmin;
         _tenantAdminService = tenantAdminService;
@@ -70,7 +71,7 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
             nameof(AddNewUserDto.Email));
 
         //Check the password matches the 
-        var passwordValidator = new PasswordValidator<TIdentity>();
+        var passwordValidator = new PasswordValidator<ApplicationUser>();
         var checkPassword = await passwordValidator.ValidateAsync(_userManager, null, newUser.Password);
         if (!checkPassword.Succeeded)
         {
@@ -104,7 +105,14 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
         var user = await _userManager.FindByEmailAsync(newUser.Email);
         if (user == null)
         {
-            user = new TIdentity { UserName = newUser.UserName, Email = newUser.Email };
+            user = new ApplicationUser
+            {
+                UserName = newUser.UserName,
+                Email = newUser.Email,
+                FirstName = newUser.FirstName,
+                LastName = newUser.LastName,
+                DesignationId = newUser.DesignationId
+            };
             var result = await _userManager.CreateAsync(user, newUser.Password);
             if (!result.Succeeded)
             {

@@ -16,6 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\AngularAndWebApiProject\DealersAndDistributors\Domain\Domain.csproj" />
 		<ProjectReference Include="..\AuthPermissions\AuthPermissions.csproj" />
 	</ItemGroup>
 
