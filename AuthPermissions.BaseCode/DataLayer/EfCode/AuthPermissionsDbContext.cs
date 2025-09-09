@@ -84,6 +84,8 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
         /// </summary>
         public DbSet<ShardingEntry> ShardingEntryBackup { get; set; }
 
+        public DbSet<Plan> Plans { get; set; }
+
 
         /// <summary>
         /// Set up AuthP's setup
@@ -92,7 +94,7 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("authp");
-            
+
             //Add concurrency token to every entity 
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
             {

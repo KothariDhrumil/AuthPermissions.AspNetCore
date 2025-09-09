@@ -96,6 +96,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// </summary>
         public IReadOnlyCollection<RoleToPermissions> TenantRoles => _tenantRoles?.ToList();
 
+
         //--------------------------------------------------
         // Exception Error name
 
