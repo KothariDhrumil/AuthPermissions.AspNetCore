@@ -18,6 +18,11 @@ namespace AuthPermissions.AdminCode
         IQueryable<Tenant> QueryTenants();
 
         /// <summary>
+        /// This simply returns a IQueryable of Parent Tenants
+        /// </summary>
+        /// <returns>query on the AuthP database</returns>
+        IQueryable<Tenant> QueryParentTenants();
+        /// <summary>
         /// This query returns all the end leaf Tenants, which is the bottom of the hierarchy (i.e. no children below it)
         /// </summary>
         /// <returns>query on the AuthP database</returns>
