@@ -86,6 +86,7 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
 
         public DbSet<Plan> Plans { get; set; }
 
+        public DbSet<TenantPlan> TenantPlans { get; set; }
 
         /// <summary>
         /// Set up AuthP's setup
