@@ -65,6 +65,10 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// </summary>
         public IReadOnlyCollection<Tenant> Tenants => _tenants?.ToList();
 
+        //public Tenant Tenant { get; set; }
+
+        //public int? TenantId { get; set; }
+
         //--------------------------------------------------
         // Exception Error name
 

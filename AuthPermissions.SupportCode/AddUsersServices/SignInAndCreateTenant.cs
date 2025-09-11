@@ -111,6 +111,9 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
 
         //--------------------------------------------------------------
         // Generic tests
+        
+        //TODO : Add transaction, so if something failed then every thing should be roll back.
+
 
         if (tenantData.TenantName == null)
             return status.AddErrorString("NullTenantName".ClassLocalizeKey(this, true),

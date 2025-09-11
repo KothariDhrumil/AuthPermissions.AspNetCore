@@ -177,6 +177,19 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
             modelBuilder.Entity<ShardingEntry>()
                 .HasIndex(x => x.Name)
                 .IsUnique();
+
+            modelBuilder.Entity<Plan>()
+                .HasIndex(x => x.Name)
+                .IsUnique();
+            modelBuilder.Entity<Plan>()
+                .HasKey(x => x.Id);
+
+
+            modelBuilder.Entity<TenantPlan>()
+                .HasIndex(x => new { x.TenentId, x.IsActive });
+            modelBuilder.Entity<TenantPlan>()
+                .HasKey(x => x.Id);
+                
         }
     }
 }
