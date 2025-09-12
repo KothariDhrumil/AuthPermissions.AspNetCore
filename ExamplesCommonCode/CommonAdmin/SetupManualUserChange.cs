@@ -73,7 +73,7 @@ namespace ExamplesCommonCode.CommonAdmin
                 UserId = authUser.UserId,
                 UserName = authUser.UserName,
                 Email = authUser.Email,
-                RoleNames = authUser.UserRoles.Select(x => x.RoleName).ToList(),
+                RoleNames = authUser.UserRoles.Select(x => x.Role.RoleName).ToList(),
                 TenantName = authUser.UserTenant?.TenantFullName,
             };
             await result.SetupDropDownListsAsync(authUsersAdmin);

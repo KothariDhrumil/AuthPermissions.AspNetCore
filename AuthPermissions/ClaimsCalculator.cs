@@ -29,7 +29,7 @@ namespace AuthPermissions
         /// <param name="context"></param>
         /// <param name="options"></param>
         /// <param name="claimAdders"></param>
-        public ClaimsCalculator(AuthPermissionsDbContext context, 
+        public ClaimsCalculator(AuthPermissionsDbContext context,
             AuthPermissionsOptions options,
                 IEnumerable<IClaimsAdder> claimAdders)
         {
@@ -58,9 +58,11 @@ namespace AuthPermissions
             var permissions = await CalcPermissionsForUserAsync(userId);
             //var permissionList= permissions?.ConvertPackedPermissionToNames(_options.InternalData.EnumPermissionsType);
 
-            if (permissions != null) 
+            if (permissions != null)
                 result.Add(new Claim(PermissionConstants.PackedPermissionClaimType, permissions));
-
+             
+            
+                       
             if (_options.TenantType.IsMultiTenant())
                 result.AddRange(GetMultiTenantClaims(userWithTenant.UserTenant));
 
@@ -131,10 +133,13 @@ namespace AuthPermissions
 
             result.Add(new Claim(PermissionConstants.DataKeyClaimType, dataKey));
 
+            result.Add(new Claim(PermissionConstants.TenantIdClaimType, tenant.TenantId.ToString()));
+
             if (_options.TenantType.IsSharding())
             {
                 result.Add(new Claim(PermissionConstants.DatabaseInfoNameType, tenant.DatabaseInfoName));
             }
+
 
             return result;
         }

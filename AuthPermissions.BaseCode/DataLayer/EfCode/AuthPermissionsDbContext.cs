@@ -142,8 +142,12 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
             modelBuilder.Entity<RoleToPermissions>()
                 .HasIndex(x => x.RoleType);
 
+            modelBuilder.Entity<RoleToPermissions>()
+                .HasKey(x => x.RoleId);
+
+
             modelBuilder.Entity<UserToRole>()
-                .HasKey(x => new { x.UserId, x.RoleName });
+                .HasKey(x => new { x.UserId, x.RoleId });
 
             modelBuilder.Entity<Tenant>().HasKey(x => x.TenantId);
             modelBuilder.Entity<Tenant>()
@@ -154,6 +158,7 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                 .IsUnicode(false);
             modelBuilder.Entity<Tenant>()
                 .HasIndex(x => x.ParentDataKey);
+
             modelBuilder.Entity<Tenant>()
                 .HasMany(x => x.TenantRoles)
                 .WithMany(x => x.Tenants);

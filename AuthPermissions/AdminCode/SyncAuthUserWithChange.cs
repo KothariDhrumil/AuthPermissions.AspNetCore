@@ -41,7 +41,7 @@ namespace AuthPermissions.AdminCode
                 OldEmail = authUser.Email;
                 OldUserName = authUser.UserName;
 
-                RoleNames = authUser.UserRoles.Select(x => x.RoleName).ToList();
+                RoleNames = authUser.UserRoles.Select(x => x.Role.RoleName).ToList();
                 TenantName = authUser.UserTenant?.TenantFullName;
             }
 

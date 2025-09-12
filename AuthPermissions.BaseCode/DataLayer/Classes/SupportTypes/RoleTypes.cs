@@ -12,14 +12,19 @@ public enum RoleTypes : byte
     /// A Role that can be assigned to any any user 
     /// </summary>
     Normal = 0,
+    
     /// <summary>
     /// A Role that is assigned to an Tenant and is automatically included in the calculation of the user's Permissions
     /// </summary>
     TenantAutoAdd = 50,
+    
     /// <summary>
     /// A Role that is assigned to an Tenant which an admin can assign to a user's list of Roles
     /// </summary>
     TenantAdminAdd = 60,
+
+    TenantCreated = 70,
+
     /// <summary>
     /// This Role is hidden from any AuthP user than is linked to a Tenant
     /// The <see cref="HiddenFromTenant"/> RoleType is automatically if a Permission in the Role has the

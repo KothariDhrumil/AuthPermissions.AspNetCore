@@ -29,7 +29,7 @@ namespace ExamplesCommonCode.CommonAdmin
                 UserName = x.UserName,
                 Email = x.Email,
                 UserId = x.UserId,
-                RoleNames = x.UserRoles.Select(y => y.RoleName).ToArray(),
+                RoleNames = x.UserRoles.Select(y => y.Role.RoleName).ToArray(),
                 TenantName = x.UserTenant.TenantFullName
             });
         }
@@ -44,7 +44,7 @@ namespace ExamplesCommonCode.CommonAdmin
                 TenantName = authUser.UserTenant?.TenantFullName
             };
             if (authUser.UserRoles != null)
-                result.RoleNames = authUser.UserRoles.Select(y => y.RoleName).ToArray();
+                result.RoleNames = authUser.UserRoles.Select(y => y.Role.RoleName).ToArray();
 
             return result;
         }

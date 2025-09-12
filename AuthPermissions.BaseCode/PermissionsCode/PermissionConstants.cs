@@ -29,5 +29,7 @@ namespace AuthPermissions.BaseCode.PermissionsCode
         public const char PackedAccessAllPermission = (char) ushort.MaxValue;
 
         public const string AccessAllPermission = "AccessAll";
+
+        public const string TenantIdClaimType = "TenantId";
     }
 }

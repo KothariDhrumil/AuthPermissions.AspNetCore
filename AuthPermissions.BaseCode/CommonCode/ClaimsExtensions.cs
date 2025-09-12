@@ -1,8 +1,9 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
-using System.Security.Claims;
+using AuthPermissions.BaseCode.DataLayer.Classes;
 using AuthPermissions.BaseCode.PermissionsCode;
+using System.Security.Claims;
 
 namespace AuthPermissions.BaseCode.CommonCode
 {
@@ -61,5 +62,13 @@ namespace AuthPermissions.BaseCode.CommonCode
         {
             return user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.DatabaseInfoNameType)?.Value;
         }
+
+        public static int? GetTenantIdFromUser(this ClaimsPrincipal user)
+        {
+            var tenantId = user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.TenantIdClaimType)?.Value;
+            return string.IsNullOrEmpty(tenantId) ? Convert.ToInt16(tenantId) : null;
+        }
+
+
     }
 }

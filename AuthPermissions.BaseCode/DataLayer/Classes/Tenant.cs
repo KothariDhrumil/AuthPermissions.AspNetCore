@@ -298,9 +298,9 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             }
 
             if (status.HasErrors || tenantRoles == null)
-                return status; 
-            
-            thisTenant._tenantRoles = new HashSet<RoleToPermissions>(tenantRoles);
+                return status;
+
+            thisTenant._tenantRoles = [.. tenantRoles];
             return status;
         }
 

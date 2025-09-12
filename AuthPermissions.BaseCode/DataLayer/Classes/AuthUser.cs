@@ -127,7 +127,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         {
             var tenantString = TenantId == null ? "" 
                 : (UserTenant == null ? ", has an tenant" : $", linked to {UserTenant.TenantFullName}");
-            var rolesString = _userRoles == null ? "" : $", roles = {string.Join(", ", _userRoles.Select(x => x.RoleName))}";
+            var rolesString = _userRoles == null ? "" : $", roles = {string.Join(", ", _userRoles.Select(x => x.RoleId))}";
             return $"UserName = {UserName}, Email = {Email}, UserId = {UserId}{rolesString}{tenantString}.";
         }
 

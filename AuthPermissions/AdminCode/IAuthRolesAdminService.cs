@@ -52,7 +52,7 @@ namespace AuthPermissions.AdminCode
         /// <param name="roleType">Optional: defaults to <see cref="RoleTypes.Normal"/></param>
         /// <returns>A status with any errors found</returns>
         Task<IStatusGeneric> CreateRoleToPermissionsAsync(string roleName, IEnumerable<string> permissionNames,
-            string description, RoleTypes roleType = RoleTypes.Normal);
+            string description, RoleTypes roleType = RoleTypes.Normal, int? userId = null);
 
         /// <summary>
         /// This updates the role's permission names, and optionally its description

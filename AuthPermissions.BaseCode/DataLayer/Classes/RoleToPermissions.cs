@@ -4,6 +4,7 @@
 using System.ComponentModel.DataAnnotations;
 using AuthPermissions.BaseCode.CommonCode;
 using AuthPermissions.BaseCode.DataLayer.Classes.SupportTypes;
+using RunMethodsSequentially.LockAndRunCode;
 
 namespace AuthPermissions.BaseCode.DataLayer.Classes
 {
@@ -26,16 +27,19 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <param name="description"></param>
         /// <param name="packedPermissions">The enum values converted to unicode chars</param>
         /// <param name="roleType">Optional: this sets the type of the Role - only used in multi-tenant apps</param>
-        public RoleToPermissions(string roleName, string description, string packedPermissions, RoleTypes roleType = RoleTypes.Normal)
+        public RoleToPermissions(string roleName, string description, string packedPermissions, RoleTypes roleType = RoleTypes.Normal, int? tenantId = null)
         {
             RoleName = roleName.Trim();
+            TenantId = tenantId;
             Update(packedPermissions, description, roleType);
         }
 
+        [Key]
+        public int RoleId { get; set; }
+
         /// <summary>
         /// Name of the role
-        /// </summary>
-        [Key]
+        /// </summary>        
         [Required(AllowEmptyStrings = false)]
         [MaxLength(AuthDbConstants.RoleNameSize)]
         public string RoleName { get; private set; }
@@ -65,9 +69,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// </summary>
         public IReadOnlyCollection<Tenant> Tenants => _tenants?.ToList();
 
-        //public Tenant Tenant { get; set; }
-
-        //public int? TenantId { get; set; }
+        public int? TenantId { get; set; }
 
         //--------------------------------------------------
         // Exception Error name
