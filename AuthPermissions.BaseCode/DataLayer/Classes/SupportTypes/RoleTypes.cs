@@ -23,7 +23,15 @@ public enum RoleTypes : byte
     /// </summary>
     TenantAdminAdd = 60,
 
+    /// <summary>
+    /// A role that is created by Tenant Admin
+    /// </summary>
     TenantCreated = 70,
+
+    /// <summary>
+    /// A Role that is assigned to a Feature, which is then assigned to a Tenant
+    /// </summary>
+    FeatureRole = 80,
 
     /// <summary>
     /// This Role is hidden from any AuthP user than is linked to a Tenant

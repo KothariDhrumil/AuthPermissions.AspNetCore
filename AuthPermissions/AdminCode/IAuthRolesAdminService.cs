@@ -76,7 +76,8 @@ namespace AuthPermissions.AdminCode
         /// <param name="roleName">name of role to delete</param>
         /// <param name="removeFromUsers">If false it will fail if any Auth user have that role.
         ///     If true it will delete the role from all the users that have it.</param>
+        ///     <param name="tenantId"> User's tenantId</param>
         /// <returns>status</returns>
-        Task<IStatusGeneric> DeleteRoleAsync(string roleName, bool removeFromUsers);
+        Task<IStatusGeneric> DeleteRoleAsync(string roleName, bool removeFromUsers, int? tenantId);
     }
 }

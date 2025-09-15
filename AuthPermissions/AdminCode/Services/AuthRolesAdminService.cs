@@ -58,7 +58,9 @@ namespace AuthPermissions.AdminCode.Services
                 ? MapToRoleWithPermissionNamesDto(_context.RoleToPermissions)
                 : MapToRoleWithPermissionNamesDto(_context.RoleToPermissions
                     .Where(x => x.RoleType == RoleTypes.Normal
-                                || (x.RoleType == RoleTypes.TenantAutoAdd || x.RoleType == RoleTypes.TenantAdminAdd)
+                                || (x.RoleType == RoleTypes.TenantAutoAdd
+                                || x.RoleType == RoleTypes.TenantAdminAdd
+                                || x.RoleType == RoleTypes.TenantCreated)
                                    & x.Tenants.Select(y => y.TenantId).Contains((int)tenantId)));
         }
 
@@ -69,14 +71,32 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="excludeFilteredPermissions">Optional: If set to true, then filtered permissions are also included.</param>
         /// <param name="groupName">optional: If true  it only returns permissions in a specific group</param>
         /// <returns></returns>
-        public List<PermissionDisplay> GetPermissionDisplay(bool excludeFilteredPermissions, string groupName = null)
+        public List<PermissionDisplay> GetPermissionDisplay(bool excludeFilteredPermissions, string groupName = null, string currentUserId = null)
         {
-            var allPermissions = PermissionDisplay
-                .GetPermissionsToDisplay(_permissionType, excludeFilteredPermissions);
+            //multi-tenant version has to filter out the roles from users that have a tenant
+            var tenantId = FindTheTenantIdOfTheUser(currentUserId);
 
-            return groupName == null
-                ? allPermissions
-                : allPermissions.Where(x => x.GroupName == groupName).ToList();
+            if (_isMultiTenant || tenantId == null)
+            {
+
+                var allPermissions = PermissionDisplay
+                    .GetPermissionsToDisplay(_permissionType, excludeFilteredPermissions);
+
+                return groupName == null
+                    ? allPermissions
+                    : allPermissions.Where(x => x.GroupName == groupName).ToList();
+            }
+            else
+            {
+                var userPermissions = _context.RoleToPermissions
+                    .Where(x => x.TenantId == tenantId)
+                    .Select(x => x.PackedPermissionsInRole.ConvertPackedPermissionToNames(_permissionType));
+
+                var allPermissions = PermissionDisplay
+                  .GetPermissionsToDisplay(_permissionType, excludeFilteredPermissions);
+
+                return [.. allPermissions.Where(x => x.PermissionName != null && userPermissions.Any(y => y.Contains(x.PermissionName)))];
+            }
         }
 
         /// <summary>
@@ -219,12 +239,12 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="removeFromUsers">If false it will fail if any AuthP user have that role.
         ///     If true it will delete the role from all the users that have it.</param>
         /// <returns>status</returns>
-        public async Task<IStatusGeneric> DeleteRoleAsync(string roleName, bool removeFromUsers)
+        public async Task<IStatusGeneric> DeleteRoleAsync(string roleName, bool removeFromUsers, int? tenantId)
         {
             var status = new StatusGenericLocalizer(_localizeDefault);
 
             var existingRolePermission =
-                await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName);
+                await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName && x.TenantId == tenantId);
 
             if (existingRolePermission == null)
                 return status.AddErrorFormattedWithParams("IncorrectRoleName".ClassLocalizeKey(this, true), //common error in this class
