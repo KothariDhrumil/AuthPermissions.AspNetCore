@@ -66,7 +66,7 @@ namespace AuthPermissions.BaseCode.CommonCode
         public static int? GetTenantIdFromUser(this ClaimsPrincipal user)
         {
             var tenantId = user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.TenantIdClaimType)?.Value;
-            return string.IsNullOrEmpty(tenantId) ? Convert.ToInt16(tenantId) : null;
+            return string.IsNullOrEmpty(tenantId) ? null : Convert.ToInt16(tenantId);
         }
 
 

@@ -11,6 +11,7 @@ using AuthPermissions.BaseCode.SetupCode;
 using LocalizeMessagesAndErrors;
 using Microsoft.EntityFrameworkCore;
 using StatusGeneric;
+using System.Linq;
 
 namespace AuthPermissions.AdminCode.Services
 {
@@ -71,12 +72,9 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="excludeFilteredPermissions">Optional: If set to true, then filtered permissions are also included.</param>
         /// <param name="groupName">optional: If true  it only returns permissions in a specific group</param>
         /// <returns></returns>
-        public List<PermissionDisplay> GetPermissionDisplay(bool excludeFilteredPermissions, string groupName = null, string currentUserId = null)
+        public List<PermissionDisplay> GetPermissionDisplay(bool excludeFilteredPermissions, string groupName = null, int? tenantId = null)
         {
-            //multi-tenant version has to filter out the roles from users that have a tenant
-            var tenantId = FindTheTenantIdOfTheUser(currentUserId);
-
-            if (_isMultiTenant || tenantId == null)
+            if (_isMultiTenant && tenantId == null)
             {
 
                 var allPermissions = PermissionDisplay
@@ -89,13 +87,15 @@ namespace AuthPermissions.AdminCode.Services
             else
             {
                 var userPermissions = _context.RoleToPermissions
-                    .Where(x => x.TenantId == tenantId)
+                    .Where(x => x.Tenants.Select(y => y.TenantId).Contains((int)tenantId))
                     .Select(x => x.PackedPermissionsInRole.ConvertPackedPermissionToNames(_permissionType));
+
+                var existingPermission = userPermissions.Select(x => x).Distinct().ToList();
 
                 var allPermissions = PermissionDisplay
                   .GetPermissionsToDisplay(_permissionType, excludeFilteredPermissions);
 
-                return [.. allPermissions.Where(x => x.PermissionName != null && userPermissions.Any(y => y.Contains(x.PermissionName)))];
+                return [.. allPermissions.Where(x => x.PermissionName != null && existingPermission.Any(y => y.Contains(x.PermissionName)))];
             }
         }
 
@@ -156,7 +156,7 @@ namespace AuthPermissions.AdminCode.Services
             else
             {
                 if ((await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName &&
-                                                                            x.TenantId.Value == tenantId)) != null)
+                                                                            x.Tenants.Select(y => y.TenantId).Contains((int)tenantId))) != null)
                     return status.AddErrorFormattedWithParams("DuplicateRoleName".ClassMethodLocalizeKey(this, true),
                         $"There is already a Role with the name of '{roleName}'.", nameof(roleName).CamelToPascal());
             }
@@ -170,7 +170,7 @@ namespace AuthPermissions.AdminCode.Services
             if (status.HasErrors)
                 return status;
 
-            _context.Add(new RoleToPermissions(roleName, description, packedPermissions, roleType, tenantId));
+            _context.Add(new RoleToPermissions(roleName, description, packedPermissions, roleType));
 
             status.CombineStatuses(await _context.SaveChangesWithChecksAsync(_localizeDefault));
 
@@ -238,13 +238,15 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="roleName">name of role to delete</param>
         /// <param name="removeFromUsers">If false it will fail if any AuthP user have that role.
         ///     If true it will delete the role from all the users that have it.</param>
+        ///     <param name="tenantId">tenantId </param>
         /// <returns>status</returns>
         public async Task<IStatusGeneric> DeleteRoleAsync(string roleName, bool removeFromUsers, int? tenantId)
         {
             var status = new StatusGenericLocalizer(_localizeDefault);
 
             var existingRolePermission =
-                await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName && x.TenantId == tenantId);
+                await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName &&
+                                                                           x.Tenants.Select(y => y.TenantId).Contains((int)tenantId));
 
             if (existingRolePermission == null)
                 return status.AddErrorFormattedWithParams("IncorrectRoleName".ClassLocalizeKey(this, true), //common error in this class

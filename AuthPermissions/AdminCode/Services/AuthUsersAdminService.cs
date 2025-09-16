@@ -474,7 +474,7 @@ namespace AuthPermissions.AdminCode.Services
 
             if (roleNames == null || roleNames.SequenceEqual( new List<string> { CommonConstants.EmptyItemName }))
                 //If the only role is the empty item, then return no roles
-                return status.SetResult(new List<RoleToPermissions>());
+                return status.SetResult([]);
 
             var foundRoles = roleNames.Any() == true
                 ? await _context.RoleToPermissions
