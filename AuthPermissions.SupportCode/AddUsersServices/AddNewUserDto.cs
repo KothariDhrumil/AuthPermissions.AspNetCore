@@ -91,4 +91,11 @@ public class AddNewUserDto
     /// User's Designation
     /// </summary>
     public int? DesignationId { get; set; }
+
+    /// <summary>
+    /// Client's Phone number
+    /// </summary>
+    public string PhoneNumber { get; set; }
+
+
 }

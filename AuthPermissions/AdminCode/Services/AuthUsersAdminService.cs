@@ -56,7 +56,7 @@ namespace AuthPermissions.AdminCode.Services
                 //Not sharding so just check the DataKey
                 return _context.AuthUsers.Where(
                     x => (x.UserTenant.ParentDataKey + x.TenantId + ".").StartsWith(dataKey));
-            
+
             //It is sharding 
             if (databaseInfoName == null)
                 throw new ArgumentNullException(nameof(databaseInfoName),
@@ -86,8 +86,8 @@ namespace AuthPermissions.AdminCode.Services
             var status = new StatusGenericLocalizer<AuthUser>(_localizeDefault);
 
             var authUser = await _context.AuthUsers
-                .Include(x => x.UserRoles)
-                .Include(x => x.UserTenant)
+                .Include(x => x.UserRoles).ThenInclude(x => x.Role)
+                .Include(x => x.UserTenant).ThenInclude(x=>x.TenantRoles)
                 .SingleOrDefaultAsync(x => x.UserId == userId);
 
             if (authUser == null)
@@ -270,13 +270,13 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="tenantName">If null, then keeps current tenant. If it is <see cref="CommonConstants.EmptyItemName"/> it will remove a tenant link.
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>status</returns>
-        public async Task<IStatusGeneric> UpdateUserAsync(string userId, 
+        public async Task<IStatusGeneric> UpdateUserAsync(string userId,
             string email = null, string userName = null, List<string> roleNames = null, string tenantName = null)
         {
             if (userId == null) throw new ArgumentNullException(nameof(userId));
 
             var status = new StatusGenericLocalizer(_localizeDefault);
-            
+
             var foundUserStatus = await FindAuthUserByUserIdAsync(userId);
             if (status.CombineStatuses(foundUserStatus).HasErrors)
                 return status;
@@ -357,7 +357,7 @@ namespace AuthPermissions.AdminCode.Services
                     "Could not find the User you asked for.", nameof(userId).CamelToPascal());
 
             _context.Remove(authUser);
-            status.CombineStatuses( await _context.SaveChangesWithChecksAsync(_localizeDefault));
+            status.CombineStatuses(await _context.SaveChangesWithChecksAsync(_localizeDefault));
 
             status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true),
                 $"Successfully deleted the user '{authUser.UserName ?? authUser.Email}'.");
@@ -472,7 +472,7 @@ namespace AuthPermissions.AdminCode.Services
         {
             var status = new StatusGenericLocalizer<List<RoleToPermissions>>(_localizeDefault);
 
-            if (roleNames == null || roleNames.SequenceEqual( new List<string> { CommonConstants.EmptyItemName }))
+            if (roleNames == null || roleNames.SequenceEqual(new List<string> { CommonConstants.EmptyItemName }))
                 //If the only role is the empty item, then return no roles
                 return status.SetResult([]);
 
@@ -496,12 +496,12 @@ namespace AuthPermissions.AdminCode.Services
                         $"The role '{foundRole.RoleName}' isn't allowed to a non-tenant user.");
 
                 if (usersTenant != null && foundRole.RoleType == RoleTypes.HiddenFromTenant)
-                    status.AddErrorFormatted("TenantNotAllowed".ClassMethodLocalizeKey(this, true), 
+                    status.AddErrorFormatted("TenantNotAllowed".ClassMethodLocalizeKey(this, true),
                         $"The role '{foundRole.RoleName}' isn't allowed to tenant user.");
-                
+
                 if (usersTenant != null && foundRole.RoleType == RoleTypes.TenantAdminAdd
                     && !usersTenant.TenantRoles.Contains(foundRole))
-                    status.AddErrorFormatted("RoleNotFoundTenant".ClassMethodLocalizeKey(this, true), 
+                    status.AddErrorFormatted("RoleNotFoundTenant".ClassMethodLocalizeKey(this, true),
                         $"The role '{foundRole.RoleName}' wasn't found in the tenant '{usersTenant.TenantFullName}' tenant roles.");
             }
 

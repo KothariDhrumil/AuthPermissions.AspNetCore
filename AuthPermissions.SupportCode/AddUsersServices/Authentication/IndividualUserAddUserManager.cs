@@ -111,7 +111,8 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
                 Email = newUser.Email,
                 FirstName = newUser.FirstName,
                 LastName = newUser.LastName,
-                DesignationId = newUser.DesignationId
+                DesignationId = newUser.DesignationId,
+                PhoneNumber = newUser.PhoneNumber,
             };
             var result = await _userManager.CreateAsync(user, newUser.Password);
             if (!result.Succeeded)

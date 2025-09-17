@@ -19,6 +19,7 @@ namespace ExamplesCommonCode.CommonAdmin
         [MaxLength(AuthDbConstants.UserIdSize)]
         public string UserId { get; private set; }
         public string[] RoleNames { get; private set; }
+        public string[] TenantFeatures { get; private set; }
         public bool HasTenant => TenantName != null;
         public string TenantName { get; private set; }
 
@@ -41,11 +42,15 @@ namespace ExamplesCommonCode.CommonAdmin
                 UserName = authUser.UserName,
                 Email = authUser.Email,
                 UserId = authUser.UserId,
-                TenantName = authUser.UserTenant?.TenantFullName
+                TenantName = authUser.UserTenant?.TenantFullName,
+
             };
             if (authUser.UserRoles != null)
-                result.RoleNames = authUser.UserRoles.Select(y => y.Role.RoleName).ToArray();
-
+                result.RoleNames = authUser.UserRoles.Select(y => y.Role?.RoleName).ToArray();
+            if (authUser.UserTenant?.TenantRoles != null)
+            {
+                result.TenantFeatures = [.. authUser.UserTenant.TenantRoles.Select(x => x.RoleName)];
+            }
             return result;
         }
     }
