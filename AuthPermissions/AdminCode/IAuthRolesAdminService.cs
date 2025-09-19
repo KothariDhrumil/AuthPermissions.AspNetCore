@@ -33,14 +33,14 @@ namespace AuthPermissions.AdminCode
         /// <summary>
         /// This returns a query containing all the Auth users that have the given role name
         /// </summary>
-        IQueryable<AuthUser> QueryUsersUsingThisRole(string roleName);
+        IQueryable<AuthUser> QueryUsersUsingThisRole(int roleId);
 
         /// <summary>
-        /// This returns a query containing all the Tenants that have given role name
+        /// This returns a query containing all the Tenants that have given role id
         /// </summary>
-        /// <param name="roleName"></param>
+        /// <param name="roleId"></param>
         /// <returns></returns>
-        public IQueryable<Tenant> QueryTenantsUsingThisRole(string roleName);
+        public IQueryable<Tenant> QueryTenantsUsingThisRole(int roleId);
 
         /// <summary>
         /// This creates a new RoleToPermissions with the given description and permissions defined by the names
@@ -58,13 +58,13 @@ namespace AuthPermissions.AdminCode
         /// This updates the role's permission names, and optionally its description
         /// if the new permissions contain an advanced permission
         /// </summary>
-        /// <param name="roleName">Name of an existing role</param>
+        /// <param name="updatedRoleName">Name of an existing role</param>
         /// <param name="permissionNames">a collection of permission names to go into this role</param>
         /// <param name="description">Optional: If given then updates the description for this role</param>
         /// <param name="roleType">Optional: defaults to <see cref="RoleTypes.Normal"/>.
         /// NOTE: the roleType is changed to <see cref="RoleTypes.HiddenFromTenant"/> if advanced permissions are found</param>
         /// <returns>Status</returns>
-        Task<IStatusGeneric> UpdateRoleToPermissionsAsync(string roleName,
+        Task<IStatusGeneric> UpdateRoleToPermissionsAsync(int roleId, string updatedRoleName,
             IEnumerable<string> permissionNames,
             string description, RoleTypes roleType = RoleTypes.Normal);
 
@@ -73,11 +73,11 @@ namespace AuthPermissions.AdminCode
         /// otherwise you will get an error.
         /// NOTE: This should not be called by a user that has a tenant, but this isn't checked
         /// </summary>
-        /// <param name="roleName">name of role to delete</param>
+        /// <param name="roleId">name of role to delete</param>
         /// <param name="removeFromUsers">If false it will fail if any Auth user have that role.
         ///     If true it will delete the role from all the users that have it.</param>
         ///     <param name="tenantId"> User's tenantId</param>
         /// <returns>status</returns>
-        Task<IStatusGeneric> DeleteRoleAsync(string roleName, bool removeFromUsers, int? tenantId);
+        Task<IStatusGeneric> DeleteRoleAsync(int roleId, bool removeFromUsers, int? tenantId);
     }
 }

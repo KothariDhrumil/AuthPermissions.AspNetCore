@@ -31,7 +31,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         {
             RoleName = roleName.Trim();
             
-            Update(packedPermissions, description, roleType);
+            Update(roleName, packedPermissions, description, roleType);
         }
 
         [Key]
@@ -99,11 +99,12 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <param name="packedPermissions"></param>
         /// <param name="description"></param>
         /// <param name="roleType"></param>
-        public void Update(string packedPermissions, string description = null, RoleTypes roleType = RoleTypes.Normal)
+        public void Update(string roleName, string packedPermissions, string description = null, RoleTypes roleType = RoleTypes.Normal)
         {
             if (string.IsNullOrEmpty(packedPermissions))
                 throw new AuthPermissionsException("There should be at least one permission associated with a role.");
 
+            RoleName = roleName;
             PackedPermissionsInRole = packedPermissions;
             Description = description?.Trim() ?? Description;
             RoleType = roleType;

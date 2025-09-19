@@ -103,19 +103,19 @@ namespace AuthPermissions.AdminCode.Services
         /// This returns a query containing all the AuthP users that have the given role name
         /// NOTE: it assumes that the user can only look for roles that they are allowed to see
         /// </summary>
-        public IQueryable<AuthUser> QueryUsersUsingThisRole(string roleName)
+        public IQueryable<AuthUser> QueryUsersUsingThisRole(int roleId)
         {
-            return _context.AuthUsers.Where(x => x.UserRoles.Any(y => y.Role.RoleName == roleName));
+            return _context.AuthUsers.Where(x => x.UserRoles.Any(y => y.RoleId == roleId));
         }
 
         /// <summary>
         /// This returns a query containing all the Tenants that have given role name
         /// </summary>
-        /// <param name="roleName"></param>
+        /// <param name="roleId"></param>
         /// <returns></returns>
-        public IQueryable<Tenant> QueryTenantsUsingThisRole(string roleName)
+        public IQueryable<Tenant> QueryTenantsUsingThisRole(int roleId)
         {
-            return _context.Tenants.Where(x => x.TenantRoles.Any(y => y.RoleName == roleName));
+            return _context.Tenants.Where(x => x.TenantRoles.Any(y => y.RoleId == roleId));
         }
 
 
@@ -181,20 +181,21 @@ namespace AuthPermissions.AdminCode.Services
         /// This updates the role's permission names, and optionally its description
         /// if the new permissions contain an advanced permission
         /// </summary>
+        /// <param name="roleId">Role id</param>
         /// <param name="roleName">Name of an existing role</param>
         /// <param name="permissionNames">a collection of permission names to go into this role</param>
         /// <param name="description">Optional: If given then updates the description for this role</param>
         /// <param name="roleType">Optional: defaults to <see cref="RoleTypes.Normal"/>.
         /// NOTE: the roleType is changed to <see cref="RoleTypes.HiddenFromTenant"/> if advanced permissions are found</param>
         /// <returns>Status</returns>
-        public async Task<IStatusGeneric> UpdateRoleToPermissionsAsync(string roleName,
+        public async Task<IStatusGeneric> UpdateRoleToPermissionsAsync(int roleId, string roleName,
             IEnumerable<string> permissionNames,
             string description, RoleTypes roleType = RoleTypes.Normal)
         {
             var status = new StatusGenericLocalizer(_localizeDefault);
             status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true),
                 $"Successfully updated the role {roleName}.");
-            var existingRolePermission = await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName);
+            var existingRolePermission = await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleId == roleId);
 
             if (existingRolePermission == null)
                 return status.AddErrorFormattedWithParams("IncorrectRoleName".ClassLocalizeKey(this, true), //common error in this class
@@ -225,7 +226,7 @@ namespace AuthPermissions.AdminCode.Services
                     return status;
             }
 
-            existingRolePermission.Update(packedPermissions, description, roleType);
+            existingRolePermission.Update(roleName, packedPermissions, description, roleType);
             status.CombineStatuses(await _context.SaveChangesWithChecksAsync(_localizeDefault));
 
             return status;
@@ -235,37 +236,37 @@ namespace AuthPermissions.AdminCode.Services
         /// This deletes a Role. If that Role is already assigned to AuthP users you must set the removeFromUsers to true
         /// otherwise you will get an error.
         /// </summary>
-        /// <param name="roleName">name of role to delete</param>
+        /// <param name="roleId">name of role to delete</param>
         /// <param name="removeFromUsers">If false it will fail if any AuthP user have that role.
         ///     If true it will delete the role from all the users that have it.</param>
         ///     <param name="tenantId">tenantId </param>
         /// <returns>status</returns>
-        public async Task<IStatusGeneric> DeleteRoleAsync(string roleName, bool removeFromUsers, int? tenantId)
+        public async Task<IStatusGeneric> DeleteRoleAsync(int roleId, bool removeFromUsers, int? tenantId)
         {
             var status = new StatusGenericLocalizer(_localizeDefault);
 
             var existingRolePermission =
-                await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName &&
-                                                                           x.Tenants.Select(y => y.TenantId).Contains((int)tenantId));
+                await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleId == roleId &&
+                                                                           (!tenantId.HasValue || x.Tenants.Select(y => y.TenantId).Contains((int)tenantId)));
 
             if (existingRolePermission == null)
                 return status.AddErrorFormattedWithParams("IncorrectRoleName".ClassLocalizeKey(this, true), //common error in this class
-                    $"Could not find a role called {roleName}", nameof(roleName).CamelToPascal());
+                    $"Could not find a role called {roleId}", nameof(roleId).CamelToPascal());
 
-            var usersWithRoles = await _context.UserToRoles.Where(x => x.Role.RoleName == roleName).ToListAsync();
+            var usersWithRoles = await _context.UserToRoles.Where(x => x.RoleId == roleId).ToListAsync();
             int tenantCount = existingRolePermission.RoleType == RoleTypes.TenantAdminAdd || existingRolePermission.RoleType == RoleTypes.TenantAutoAdd
-                ? await QueryTenantsUsingThisRole(roleName).CountAsync() : 0;
+                ? await QueryTenantsUsingThisRole(roleId).CountAsync() : 0;
             if (!removeFromUsers)
             {
                 if (usersWithRoles.Any())
                     status.AddErrorFormattedWithParams("RoleUsedUser".ClassMethodLocalizeKey(this, true),
                         $"That role is used in {usersWithRoles.Count} AuthUsers and you didn't confirm the delete.",
-                    nameof(roleName).CamelToPascal());
+                    nameof(roleId).CamelToPascal());
 
                 if (tenantCount > 0)
                     status.AddErrorFormattedWithParams("RoleUsedTenant".ClassMethodLocalizeKey(this, true),
                         $"That role is used in {usersWithRoles.Count} tenants and you didn't confirm the delete.",
-                        nameof(roleName).CamelToPascal());
+                        nameof(roleId).CamelToPascal());
 
                 if (status.HasErrors)
                     return status;
@@ -283,7 +284,7 @@ namespace AuthPermissions.AdminCode.Services
             status.CombineStatuses(await _context.SaveChangesWithChecksAsync(_localizeDefault));
 
             //build the success message
-            var successMessages = new List<FormattableString> { $"Successfully deleted the role {roleName}" };
+            var successMessages = new List<FormattableString> { $"Successfully deleted the role {roleId}" };
             var successKey = "Success";
             if (usersWithRoles.Any())
             {
@@ -313,6 +314,7 @@ namespace AuthPermissions.AdminCode.Services
         {
             return roleToPermissions.Select(x => new RoleWithPermissionNamesDto
             {
+                RoleId = x.RoleId,
                 RoleName = x.RoleName,
                 Description = x.Description,
                 RoleType = x.RoleType,

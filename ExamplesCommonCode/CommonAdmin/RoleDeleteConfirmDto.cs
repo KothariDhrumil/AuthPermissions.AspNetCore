@@ -14,16 +14,16 @@ namespace ExamplesCommonCode.CommonAdmin
     /// </summary>
     public class RoleDeleteConfirmDto
     {
-        public string RoleName { get; set; }
+        public int RoleId { get; set; }
         public string ConfirmDelete { get; set; }
         public List<EmailAndUserNameDto> AuthUsers { get; set; }
 
-        public static async Task<RoleDeleteConfirmDto> FormRoleDeleteConfirmDtoAsync(string roleName, IAuthRolesAdminService rolesAdminService)
+        public static async Task<RoleDeleteConfirmDto> FormRoleDeleteConfirmDtoAsync(int roleId, IAuthRolesAdminService rolesAdminService)
         {
             var result = new RoleDeleteConfirmDto
             {
-                RoleName = roleName,
-                AuthUsers = await rolesAdminService.QueryUsersUsingThisRole(roleName)
+                RoleId = roleId,
+                AuthUsers = await rolesAdminService.QueryUsersUsingThisRole(roleId)
                     .Select(x => new EmailAndUserNameDto(x.Email, x.UserName))
                     .ToListAsync()
             };
