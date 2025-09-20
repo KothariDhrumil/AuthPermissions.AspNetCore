@@ -133,5 +133,6 @@ namespace AuthPermissions.AdminCode
         /// <param name="tenantRoleIds">List of role name. Can be null, which means no roles to add</param>
         /// <returns>Status</returns>
         Task<IStatusGeneric<List<RoleToPermissions>>> GetRolesWithChecksAsync(List<int> tenantRoleIds);
+        Task<IQueryable<Tenant>> QueryChildTenants(int parentTenantId);
     }
 }

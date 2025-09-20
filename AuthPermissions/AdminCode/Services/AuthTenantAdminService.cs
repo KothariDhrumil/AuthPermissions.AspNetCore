@@ -71,6 +71,23 @@ namespace AuthPermissions.AdminCode.Services
                 .Tenants
                 .Where(x => x.ParentTenantId == null);
         }
+        /// <summary>
+        /// This simply returns a IQueryable of Tenants
+        /// </summary>
+        /// <returns>query on the AuthP database</returns>
+        public async Task<IQueryable<Tenant>> QueryChildTenants(int parentTenantId)
+        {
+            var tenantToMove = await _context.Tenants
+                     .SingleOrDefaultAsync(x => x.TenantId == parentTenantId);
+            var originalName = tenantToMove.TenantFullName;
+
+            var query = _context.Tenants
+                .Include(x => x.Parent)
+                .Include(x => x.Children)
+                .Where(x => x.TenantFullName.StartsWith(tenantToMove.TenantFullName) && x.TenantId != parentTenantId);
+            return query;
+
+        }
 
         /// <summary>
         /// This query returns all the end leaf Tenants, which is the bottom of the hierarchy (i.e. no children below it)
