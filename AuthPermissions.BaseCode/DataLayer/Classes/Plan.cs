@@ -19,11 +19,21 @@ public class Plan
 
     public bool IsActive { get; set; }
 
+    ///// <summary>
+    ///// Packed permissions string (kept for compatibility).
+    ///// </summary>
+    //[Required(AllowEmptyStrings = false)]
+    //public string Features { get; set; }
+
     /// <summary>
-    /// This contains the list of permissions as a series of unicode chars
+    /// Roles included in this plan (one plan can contain many roles).
     /// </summary>
-    [Required(AllowEmptyStrings = false)] //A role must have at least one role in it
-    public string Features { get; set; }
+    public ICollection<RoleToPermissions> Roles { get; set; } = new List<RoleToPermissions>();
+
+    /// <summary>
+    /// Assignments of this plan to tenants.
+    /// </summary>
+    public ICollection<TenantPlan> TenantPlans { get; set; } = new List<TenantPlan>();
 
 
 }

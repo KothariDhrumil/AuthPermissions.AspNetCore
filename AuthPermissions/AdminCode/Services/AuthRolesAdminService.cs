@@ -46,18 +46,26 @@ namespace AuthPermissions.AdminCode.Services
         /// This can be by a user linked to a tenant and it will display all the roles that tenant can use 
         /// </summary>
         /// <param name="currentUserId">Only used if using AuthP's multi-tenant feature you must provide the current user's ID</param>
+        /// <param name="roleTypes">Role type for filter</param>
         /// <returns>query on the database</returns>
-        public IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(string currentUserId = null)
+        public IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(RoleTypes? roleTypes,string currentUserId = null)
         {
+            var roleToPermissions = _context.RoleToPermissions.AsQueryable();
+
+            if (roleTypes is not null)
+            {
+                roleToPermissions = roleToPermissions.Where(x => x.RoleType == roleTypes);
+            }
+
             if (!_isMultiTenant)
-                return MapToRoleWithPermissionNamesDto(_context.RoleToPermissions);
+                return MapToRoleWithPermissionNamesDto(roleToPermissions);
 
             //multi-tenant version has to filter out the roles from users that have a tenant
             var tenantId = FindTheTenantIdOfTheUser(currentUserId);
 
             return tenantId == null
-                ? MapToRoleWithPermissionNamesDto(_context.RoleToPermissions)
-                : MapToRoleWithPermissionNamesDto(_context.RoleToPermissions
+                ? MapToRoleWithPermissionNamesDto(roleToPermissions)
+                : MapToRoleWithPermissionNamesDto(roleToPermissions
                     .Where(x => x.RoleType == RoleTypes.Normal
                                 || (x.RoleType == RoleTypes.TenantAutoAdd
                                 || x.RoleType == RoleTypes.TenantAdminAdd

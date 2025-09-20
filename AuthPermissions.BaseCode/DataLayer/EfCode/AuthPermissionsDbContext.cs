@@ -194,7 +194,76 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                 .HasIndex(x => new { x.TenentId, x.IsActive });
             modelBuilder.Entity<TenantPlan>()
                 .HasKey(x => x.Id);
-                
+
+
+            // Plan <-> RoleToPermissions (many-to-many via join table authp.PlanToRoles)
+            modelBuilder.Entity<Plan>()
+                .HasMany(p => p.Roles)
+                .WithMany() // no navigation on RoleToPermissions needed
+                .UsingEntity<Dictionary<string, object>>(
+                    "PlanToRoles",
+                    j => j
+                        .HasOne<RoleToPermissions>()
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .HasPrincipalKey(r => r.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j => j
+                        .HasOne<Plan>()
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .HasPrincipalKey(p => p.Id)
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.ToTable("PlanToRoles", "authp");
+                        j.HasKey("PlanId", "RoleId");
+                        j.HasIndex("RoleId");
+                    });
+
+            // TenantPlans (many plans can be assigned to one tenant; only one active at a time)
+            modelBuilder.Entity<TenantPlan>()
+                .HasKey(x => x.Id);
+
+            modelBuilder.Entity<TenantPlan>()
+                .HasOne(tp => tp.Tenant)
+                .WithMany() // optional: add ICollection<TenantPlan> to Tenant if you need reverse nav
+                .HasForeignKey(tp => tp.TenentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TenantPlan>()
+                .HasOne(tp => tp.Plan)
+                .WithMany(p => p.TenantPlans)
+                .HasForeignKey(tp => tp.PlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Helpful non-unique indexes
+            modelBuilder.Entity<TenantPlan>()
+                .HasIndex(tp => tp.TenentId);
+            modelBuilder.Entity<TenantPlan>()
+                .HasIndex(tp => tp.PlanId);
+
+            // Unique filtered index: only one active plan per tenant
+            if (Database.IsSqlServer())
+            {
+                modelBuilder.Entity<TenantPlan>()
+                    .HasIndex(tp => tp.TenentId)
+                    .IsUnique()
+                    .HasFilter("[IsActive] = 1");
+            }
+            else if (Database.IsNpgsql())
+            {
+                modelBuilder.Entity<TenantPlan>()
+                    .HasIndex(tp => tp.TenentId)
+                    .IsUnique()
+                    .HasFilter("\"IsActive\" = true");
+            }
+            else
+            {
+                // Callback (no filtering support): keep existing composite index for performance
+                modelBuilder.Entity<TenantPlan>()
+                    .HasIndex(x => new { x.TenentId, x.IsActive });
+            }
         }
     }
 }

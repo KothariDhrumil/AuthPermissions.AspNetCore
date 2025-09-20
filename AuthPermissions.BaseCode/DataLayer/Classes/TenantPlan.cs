@@ -1,6 +1,8 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
+using System.ComponentModel.DataAnnotations;
+
 namespace AuthPermissions.BaseCode.DataLayer.Classes;
 
 public class TenantPlan
@@ -22,5 +24,5 @@ public class TenantPlan
 
     public string Remarks { get; set; }
 
-    public string Permissions { get; set; }
+   
 }
