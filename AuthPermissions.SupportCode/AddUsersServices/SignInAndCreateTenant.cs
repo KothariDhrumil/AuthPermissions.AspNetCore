@@ -251,7 +251,7 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
     {
         var tenantRoles = GetDataFromVersions(tenantData.Version,
             versionData.TenantRolesForEachVersion,
-            nameof(MultiTenantVersionData.TenantRolesForEachVersion)) ?? new List<string>();
+            nameof(MultiTenantVersionData.TenantRolesForEachVersion)) ?? new List<int>();
 
         //We create a unique name for the tenant at this stage. Once the sign in has correctly created the
         //tenant and the new user, then the tenant name will be set to the sign-in TenantName

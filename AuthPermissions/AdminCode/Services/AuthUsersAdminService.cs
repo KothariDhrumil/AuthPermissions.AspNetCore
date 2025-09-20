@@ -87,7 +87,7 @@ namespace AuthPermissions.AdminCode.Services
 
             var authUser = await _context.AuthUsers
                 .Include(x => x.UserRoles).ThenInclude(x => x.Role)
-                .Include(x => x.UserTenant).ThenInclude(x=>x.TenantRoles)
+                .Include(x => x.UserTenant).ThenInclude(x => x.TenantRoles)
                 .SingleOrDefaultAsync(x => x.UserId == userId);
 
             if (authUser == null)
@@ -216,11 +216,11 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="userId"></param>
         /// <param name="email">if not null, then checked to be a valid email</param>
         /// <param name="userName"></param>
-        /// <param name="roleNames">The rolenames of this user - if null then assumes no roles</param>
+        /// <param name="roleIds">The rolenames of this user - if null then assumes no roles</param>
         /// <param name="tenantName">optional: full name of the tenant</param>
         /// <returns>Status, with created AuthUser</returns>
         public async Task<IStatusGeneric<AuthUser>> AddNewUserAsync(string userId, string email,
-            string userName, List<string> roleNames, string tenantName = null)
+            string userName, List<int> roleIds, string tenantName = null)
         {
             var status = new StatusGenericLocalizer<AuthUser>(_localizeDefault);
             status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true),
@@ -240,7 +240,7 @@ namespace AuthPermissions.AdminCode.Services
                     $"A tenant with the name '{tenantName}' wasn't found.", nameof(tenantName).CamelToPascal());
 
             //Find/check the roles
-            var rolesStatus = await FindCheckRolesAreValidForUserAsync(roleNames, foundTenant, userName ?? email);
+            var rolesStatus = await FindCheckRolesAreValidForUserAsync(roleIds, foundTenant, userName ?? email);
 
             if (status.CombineStatuses(rolesStatus).HasErrors)
                 return status;
@@ -264,14 +264,14 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="userId"></param>
         /// <param name="email">Either provide a email or null. if null, then uses the current user's email</param>
         /// <param name="userName">Either provide a userName or null. if null, then uses the current user's userName</param>
-        /// <param name="roleNames">Either a list of rolenames or null. If null, then keeps its current rolenames.
+        /// <param name="roleIds">Either a list of rolenames or null. If null, then keeps its current rolenames.
         /// If the rolesNames collection only contains a single entry with the value <see cref="CommonConstants.EmptyItemName"/>,
         /// then the roles will be set to an empty collection.</param>
         /// <param name="tenantName">If null, then keeps current tenant. If it is <see cref="CommonConstants.EmptyItemName"/> it will remove a tenant link.
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>status</returns>
         public async Task<IStatusGeneric> UpdateUserAsync(string userId,
-            string email = null, string userName = null, List<string> roleNames = null, string tenantName = null)
+            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null)
         {
             if (userId == null) throw new ArgumentNullException(nameof(userId));
 
@@ -297,7 +297,7 @@ namespace AuthPermissions.AdminCode.Services
 
             //Get current tenant as roleNames needs tenant
             var foundTenant = foundUserStatus.Result.UserTenant;
-            if (foundTenant != null && tenantName == null && roleNames != null)
+            if (foundTenant != null && tenantName == null && roleIds != null)
                 //You are going to update the roles and you aren't changing the tenant, then you need to load the TenantRoles
                 await _context.Entry(foundTenant)
                     .Collection(x => x.TenantRoles).LoadAsync();
@@ -319,13 +319,13 @@ namespace AuthPermissions.AdminCode.Services
             }
 
             //If rolenames isn't null, then update with new RoleNames
-            if (roleNames != null)
+            if (roleIds != null)
             {
                 var updatedRoles = new List<RoleToPermissions>();
-                if (!(roleNames.Count == 1 && roleNames.Single() == CommonConstants.EmptyItemName))
+                if (!(roleIds.Count == 1 && roleIds.Single() == 0))
                 {
                     //Find/check Roles
-                    var rolesStatus = await FindCheckRolesAreValidForUserAsync(roleNames, foundTenant, userName ?? email);
+                    var rolesStatus = await FindCheckRolesAreValidForUserAsync(roleIds, foundTenant, userName ?? email);
 
                     if (status.CombineStatuses(rolesStatus).HasErrors)
                         return status;
@@ -429,11 +429,11 @@ namespace AuthPermissions.AdminCode.Services
                         continue;
                     case SyncAuthUserChangeTypes.Create:
                         status.CombineStatuses(await AddNewUserAsync(syncChange.UserId, syncChange.Email,
-                            syncChange.UserName, syncChange.RoleNames, syncChange.TenantName));
+                            syncChange.UserName, syncChange.RoleIds, syncChange.TenantName));
                         break;
                     case SyncAuthUserChangeTypes.Update:
                         status.CombineStatuses(await UpdateUserAsync(syncChange.UserId, syncChange.Email,
-                            syncChange.UserName, syncChange.RoleNames, syncChange.TenantName));
+                            syncChange.UserName, syncChange.RoleIds, syncChange.TenantName));
                         break;
                     case SyncAuthUserChangeTypes.Delete:
                         var authUserStatus = await FindAuthUserByUserIdAsync(syncChange.UserId);
@@ -463,27 +463,27 @@ namespace AuthPermissions.AdminCode.Services
         /// <summary>
         /// This finds and checks that the roles are valid for this type of user and tenant
         /// </summary>
-        /// <param name="roleNames"></param>
+        /// <param name="roleIds"></param>
         /// <param name="usersTenant">NOTE: must include the tenant's roles</param>
         /// <param name="userName">name/email of the user</param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        private async Task<IStatusGeneric<List<RoleToPermissions>>> FindCheckRolesAreValidForUserAsync(List<string> roleNames, Tenant usersTenant, string userName)
+        private async Task<IStatusGeneric<List<RoleToPermissions>>> FindCheckRolesAreValidForUserAsync(List<int> roleIds, Tenant usersTenant, string userName)
         {
             var status = new StatusGenericLocalizer<List<RoleToPermissions>>(_localizeDefault);
 
-            if (roleNames == null || roleNames.SequenceEqual(new List<string> { CommonConstants.EmptyItemName }))
+            if (roleIds == null || roleIds.SequenceEqual([]))
                 //If the only role is the empty item, then return no roles
                 return status.SetResult([]);
 
-            var foundRoles = roleNames.Any() == true
+            var foundRoles = roleIds.Any() == true
                 ? await _context.RoleToPermissions
-                    .Where(x => roleNames.Contains(x.RoleName))
+                    .Where(x => roleIds.Contains(x.RoleId))
                     .ToListAsync()
                 : new List<RoleToPermissions>();
-            if (foundRoles.Count != (roleNames?.Count ?? 0))
+            if (foundRoles.Count != (roleIds?.Count ?? 0))
             {
-                foreach (var badRoleName in roleNames.Where(x => !foundRoles.Select(y => y.RoleName).Contains(x)))
+                foreach (var badRoleName in roleIds.Where(x => !foundRoles.Select(y => y.RoleId).Contains(x)))
                     status.AddErrorFormatted("RoleNotFound".ClassMethodLocalizeKey(this, true),
                         $"The Role '{badRoleName}' was not found in the lists of Roles.");
             }

@@ -40,7 +40,7 @@ public class AddNewUserDto
     /// <summary>
     /// A list of Role names to add to the AuthP user when the AuthP user is created
     /// </summary>
-    public List<string> Roles { get; set; }
+    public List<int> Roles { get; set; }
 
     /// <summary>
     /// Optional. This holds the tenantId of the tenant that the joining user should be linked to
@@ -74,7 +74,7 @@ public class AddNewUserDto
     /// <returns></returns>
     public string GetRolesAsCommaDelimited()
     {
-        return string.Join(",", Roles?.Select(x => x.Trim()) ?? Array.Empty<string>());
+        return string.Join(",", Roles?.Select(x => x)) ?? string.Empty;
     }
 
     /// <summary>

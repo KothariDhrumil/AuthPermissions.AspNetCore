@@ -5,7 +5,6 @@ using AuthPermissions.BaseCode.DataLayer.Classes;
 using AuthPermissions.BaseCode.DataLayer.Classes.SupportTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace AuthPermissions.BaseCode.DataLayer.EfCode
@@ -264,6 +263,31 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                 modelBuilder.Entity<TenantPlan>()
                     .HasIndex(x => new { x.TenentId, x.IsActive });
             }
+
+            // TenantPlan <-> RoleToPermissions (many-to-many via join table authp.TenantPlanRoles)
+            modelBuilder.Entity<TenantPlan>()
+                .HasMany(tp => tp.Roles)
+                .WithMany() // no navigation on RoleToPermissions needed
+                .UsingEntity<Dictionary<string, object>>(
+                    "TenantPlanRoles",
+                    j => j
+                        .HasOne<RoleToPermissions>()
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .HasPrincipalKey(r => r.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j => j
+                        .HasOne<TenantPlan>()
+                        .WithMany()
+                        .HasForeignKey("TenantPlanId")
+                        .HasPrincipalKey(tp => tp.Id)
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.ToTable("TenantPlanRoles", "authp");
+                        j.HasKey("TenantPlanId", "RoleId");
+                        j.HasIndex("RoleId");
+                    });
         }
     }
 }

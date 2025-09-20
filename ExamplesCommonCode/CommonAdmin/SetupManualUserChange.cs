@@ -45,7 +45,7 @@ namespace ExamplesCommonCode.CommonAdmin
         /// <summary>
         /// The AuthRoles for this AuthUser
         /// </summary>
-        public List<string> RoleNames { set; get; } 
+        public List<int> RoleIds { set; get; } 
 
         /// <summary>
         /// The name of the AuthP Tenant for this AuthUser (can be null)
@@ -73,7 +73,7 @@ namespace ExamplesCommonCode.CommonAdmin
                 UserId = authUser.UserId,
                 UserName = authUser.UserName,
                 Email = authUser.Email,
-                RoleNames = authUser.UserRoles.Select(x => x.Role.RoleName).ToList(),
+                RoleIds = [.. authUser.UserRoles.Select(x => x.Role.RoleId)],
                 TenantName = authUser.UserTenant?.TenantFullName,
             };
             await result.SetupDropDownListsAsync(authUsersAdmin);
@@ -112,11 +112,11 @@ namespace ExamplesCommonCode.CommonAdmin
                     break;
                 case SyncAuthUserChangeTypes.Create:
                     status.CombineStatuses(
-                        await authUsersAdmin.AddNewUserAsync(UserId, Email, UserName, RoleNames, TenantName));
+                        await authUsersAdmin.AddNewUserAsync(UserId, Email, UserName, RoleIds, TenantName));
                     break;
                 case SyncAuthUserChangeTypes.Update:
                     status.CombineStatuses(
-                        await authUsersAdmin.UpdateUserAsync(UserId, Email, UserName, RoleNames, TenantName));
+                        await authUsersAdmin.UpdateUserAsync(UserId, Email, UserName, RoleIds, TenantName));
                     break;
                 case SyncAuthUserChangeTypes.Delete:
                     throw new AuthPermissionsException("You should direct a Delete change to a Delete confirm page.");

@@ -28,7 +28,7 @@ public class ShardingOnlyTenantAddDto
     /// <summary>
     /// Optional: List of tenant role names 
     /// </summary>
-    public List<string> TenantRoleNames { get; set; } = new List<string>();
+    public List<int> TenantRoleIds { get; set; } = new List<int>();
 
     /// <summary>
     /// Optional: If you have multiple connections strings you should This should contains the names of the connection strings to select the correct server
