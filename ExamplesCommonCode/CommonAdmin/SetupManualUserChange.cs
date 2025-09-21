@@ -13,6 +13,7 @@ using AuthPermissions.BaseCode.CommonCode;
 using AuthPermissions.BaseCode.DataLayer.Classes.SupportTypes;
 using AuthPermissions.BaseCode.SetupCode;
 using LocalizeMessagesAndErrors;
+using Microsoft.AspNetCore.Mvc;
 using StatusGeneric;
 
 namespace ExamplesCommonCode.CommonAdmin
@@ -28,13 +29,10 @@ namespace ExamplesCommonCode.CommonAdmin
         /// The userId of the user (NOTE: this is not show)
         /// </summary>
         [Required(AllowEmptyStrings = false)]
-        [MaxLength(AuthDbConstants.UserIdSize)] 
+        [MaxLength(AuthDbConstants.UserIdSize)]
         public string UserId { get; set; }
-        /// <summary>
-        /// The user's main email (used as one way to find the user) 
-        /// </summary>
-        [Required(AllowEmptyStrings = false)]
-        [MaxLength(AuthDbConstants.EmailSize)] 
+
+        [MaxLength(AuthDbConstants.EmailSize)]
         public string Email { get; set; }
         /// <summary>
         /// The user's name
@@ -45,7 +43,7 @@ namespace ExamplesCommonCode.CommonAdmin
         /// <summary>
         /// The AuthRoles for this AuthUser
         /// </summary>
-        public List<int> RoleIds { set; get; } 
+        public List<int> RoleIds { set; get; }
 
         /// <summary>
         /// The name of the AuthP Tenant for this AuthUser (can be null)
@@ -55,6 +53,10 @@ namespace ExamplesCommonCode.CommonAdmin
         public List<string> AllRoleNames { get; set; }
 
         public List<string> AllTenantNames { get; set; }
+
+        public string FirstName { set; get; }
+        public string LastName { set; get; }
+        public string PhoneNumber { set; get; }
 
         public static async Task<IStatusGeneric<SetupManualUserChange>> PrepareForUpdateAsync(string userId,
             IAuthUsersAdminService authUsersAdmin)

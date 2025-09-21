@@ -144,6 +144,17 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
             modelBuilder.Entity<RoleToPermissions>()
                 .HasKey(x => x.RoleId);
 
+            // Who created the role (optional FK to Tenant)
+            modelBuilder.Entity<RoleToPermissions>()
+                .HasOne(x => x.CreatedByTenant)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByTenantId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Unique role name per creator-tenant (global roles have CreatedByTenantId = null)
+            modelBuilder.Entity<RoleToPermissions>()
+                .HasIndex(x => new { x.RoleName, x.CreatedByTenantId })
+                .IsUnique();
 
             modelBuilder.Entity<UserToRole>()
                 .HasKey(x => new { x.UserId, x.RoleId });

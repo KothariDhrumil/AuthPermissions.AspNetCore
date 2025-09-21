@@ -130,12 +130,15 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
         //We have created the individual user account, so we have the user's UserId.
         //Now we create the AuthUser using the data we have been given
 
-        var tenantName = newUser.TenantId == null
+        var tenant = newUser.TenantId == null
             ? null
-            : (await _tenantAdminService.GetTenantViaIdAsync((int)newUser.TenantId)).Result?.TenantFullName;
+            : (await _tenantAdminService.GetTenantViaIdAsync((int)newUser.TenantId)).Result;
 
         if (status.HasErrors)
             return status;
+
+        newUser.Roles = tenant.TenantRoles.Select(x=>x.RoleId).ToList();
+        var tenantName = tenant.TenantFullName;
 
         return await _authUsersAdmin.AddNewUserAsync(user.Id,
             newUser.Email, newUser.UserName, newUser.Roles, tenantName);

@@ -150,7 +150,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             if (status.HasErrors)
                 return status;
 
-            _userRoles = new HashSet<UserToRole>(roles.Select(x => new UserToRole(UserId, x)));
+            _userRoles = [.. roles.Select(x => new UserToRole(UserId, x))];
 
             return status;
         }

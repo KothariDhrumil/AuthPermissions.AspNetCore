@@ -19,6 +19,8 @@ namespace AuthPermissions.AdminCode
         /// <returns>query on the database</returns>
         IQueryable<AuthUser> QueryAuthUsers(string dataKey = null, string databaseInfoName = null);
 
+        IQueryable<AuthUser> QueryAuthUsers(int tenantId);
+
         /// <summary>
         /// Finds a AuthUser via its UserId. Returns a status with an error if not found
         /// </summary>
@@ -84,7 +86,7 @@ namespace AuthPermissions.AdminCode
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>status</returns>
         Task<IStatusGeneric> UpdateUserAsync(string userId,
-            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null);
+            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null, string firstName = null, string lastName = null, string PhoneNumber = null);
 
         /// <summary>
         /// This will delete the AuthUser with the given userId

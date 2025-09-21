@@ -57,22 +57,32 @@ namespace AuthPermissions.AdminCode.Services
                 return _context.AuthUsers.Where(
                     x => (x.UserTenant.ParentDataKey + x.TenantId + ".").StartsWith(dataKey));
 
-            //It is sharding 
-            if (databaseInfoName == null)
-                throw new ArgumentNullException(nameof(databaseInfoName),
-                    "You must provide the user's databaseInfoName claim when using this method with sharding.");
+            ////It is sharding 
+            //if (databaseInfoName == null)
+            //    throw new ArgumentNullException(nameof(databaseInfoName),
+            //        "You must provide the user's databaseInfoName claim when using this method with sharding.");
 
             if (_options.TenantType.IsHierarchical())
                 //Hierarchical: so normal DataKey test
                 return _context.AuthUsers.Where(x =>
-                    (x.UserTenant.ParentDataKey + x.TenantId + ".").StartsWith(dataKey) &&
-                    x.UserTenant.DatabaseInfoName == databaseInfoName);
+                    (x.UserTenant.ParentDataKey + x.TenantId + ".").StartsWith(dataKey));
 
             //SingleLevel: The DataKey is only checked if its in a database with other tenants
             return _context.AuthUsers.Where(x =>
                 (x.UserTenant.HasOwnDb || (x.UserTenant.ParentDataKey + x.TenantId + ".") == dataKey)
                 && x.UserTenant.DatabaseInfoName == databaseInfoName);
 
+        }
+
+        /// <summary>
+        /// This returns a IQueryable of AuthUser, with optional filtering by dataKey and sharding name (useful for tenant admin)
+        /// </summary>
+        /// <param name="dataKey">optional dataKey. If provided then it only returns AuthUsers that fall within that dataKey</param>
+        /// <param name="databaseInfoName">optional sharding name. If provided then it only returns AuthUsers that fall within that dataKey</param>
+        /// <returns>query on the database</returns>
+        public IQueryable<AuthUser> QueryAuthUsers(int tenantId)
+        {
+            return _context.AuthUsers.Where(x => x.TenantId == tenantId);
         }
 
         /// <summary>
@@ -271,7 +281,7 @@ namespace AuthPermissions.AdminCode.Services
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>status</returns>
         public async Task<IStatusGeneric> UpdateUserAsync(string userId,
-            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null)
+            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null, string firstName = null, string lastname = null, string phoneNumber = null)
         {
             if (userId == null) throw new ArgumentNullException(nameof(userId));
 

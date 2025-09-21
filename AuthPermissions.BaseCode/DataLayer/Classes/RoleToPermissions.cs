@@ -1,10 +1,11 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
-using System.ComponentModel.DataAnnotations;
 using AuthPermissions.BaseCode.CommonCode;
 using AuthPermissions.BaseCode.DataLayer.Classes.SupportTypes;
 using RunMethodsSequentially.LockAndRunCode;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthPermissions.BaseCode.DataLayer.Classes
 {
@@ -27,10 +28,11 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <param name="description"></param>
         /// <param name="packedPermissions">The enum values converted to unicode chars</param>
         /// <param name="roleType">Optional: this sets the type of the Role - only used in multi-tenant apps</param>
-        public RoleToPermissions(string roleName, string description, string packedPermissions, RoleTypes roleType = RoleTypes.Normal)
+        /// <param name="createdByTenantId">Created Role by</param>
+        public RoleToPermissions(string roleName, string description, string packedPermissions, RoleTypes roleType = RoleTypes.Normal, int? createdByTenantId = null)
         {
             RoleName = roleName.Trim();
-            
+            CreatedByTenantId = createdByTenantId;
             Update(roleName, packedPermissions, description, roleType);
         }
 
@@ -59,6 +61,20 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// </summary>
         [Required(AllowEmptyStrings = false)] //A role must have at least one role in it
         public string PackedPermissionsInRole { get; private set; }
+
+
+        /// <summary>
+        /// The tenant that created this role (null for app/global roles).
+        /// </summary>
+        public int? CreatedByTenantId { get; private set; }
+
+        /// <summary>
+        /// Optional navigation to the tenant that created this role.
+        /// </summary>
+        [ForeignKey(nameof(CreatedByTenantId))]
+        public Tenant CreatedByTenant { get; private set; }
+
+
 
         //----------------------------------------------------
         // Relationships

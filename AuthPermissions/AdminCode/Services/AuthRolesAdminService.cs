@@ -48,7 +48,7 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="currentUserId">Only used if using AuthP's multi-tenant feature you must provide the current user's ID</param>
         /// <param name="roleTypes">Role type for filter</param>
         /// <returns>query on the database</returns>
-        public IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(RoleTypes? roleTypes,string currentUserId = null)
+        public IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(RoleTypes? roleTypes, string currentUserId = null)
         {
             var roleToPermissions = _context.RoleToPermissions.AsQueryable();
 
@@ -70,7 +70,7 @@ namespace AuthPermissions.AdminCode.Services
                                 || (x.RoleType == RoleTypes.TenantAutoAdd
                                 || x.RoleType == RoleTypes.TenantAdminAdd
                                 || x.RoleType == RoleTypes.TenantCreated)
-                                   & x.Tenants.Select(y => y.TenantId).Contains((int)tenantId)));
+                                   & (x.Tenants.Select(y => y.TenantId).Contains((int)tenantId) || x.CreatedByTenantId == tenantId)));
         }
 
         /// <summary>
@@ -164,7 +164,7 @@ namespace AuthPermissions.AdminCode.Services
             else
             {
                 if ((await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName &&
-                                                                            x.Tenants.Select(y => y.TenantId).Contains((int)tenantId))) != null)
+                                                                            x.CreatedByTenantId == tenantId)) != null)
                     return status.AddErrorFormattedWithParams("DuplicateRoleName".ClassMethodLocalizeKey(this, true),
                         $"There is already a Role with the name of '{roleName}'.", nameof(roleName).CamelToPascal());
             }
@@ -178,7 +178,10 @@ namespace AuthPermissions.AdminCode.Services
             if (status.HasErrors)
                 return status;
 
-            _context.Add(new RoleToPermissions(roleName, description, packedPermissions, roleType));
+            // When adding the role, include createdByTenantId for tenant-created roles
+            var createdByTenantId = roleType == RoleTypes.TenantCreated ? tenantId : null;
+
+            _context.Add(new RoleToPermissions(roleName, description, packedPermissions, roleType, createdByTenantId));
 
             status.CombineStatuses(await _context.SaveChangesWithChecksAsync(_localizeDefault));
 
