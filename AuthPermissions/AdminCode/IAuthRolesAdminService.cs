@@ -19,7 +19,7 @@ namespace AuthPermissions.AdminCode
         /// </summary>
         /// <param name="currentUserId">If your application uses the Multi-Tenant code you must provide the current userId (or null if not logged in)</param>
         /// <returns>query on the database</returns>
-        IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(RoleTypes? roleTypes, string currentUserId = null);
+        IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(List<RoleTypes> roleTypes, string currentUserId = null);
 
         /// <summary>
         /// This returns a list of permissions with the information from the Display attribute

@@ -48,13 +48,14 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="currentUserId">Only used if using AuthP's multi-tenant feature you must provide the current user's ID</param>
         /// <param name="roleTypes">Role type for filter</param>
         /// <returns>query on the database</returns>
-        public IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(RoleTypes? roleTypes, string currentUserId = null)
+        public IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(List<RoleTypes> roleTypes, string currentUserId = null)
         {
             var roleToPermissions = _context.RoleToPermissions.AsQueryable();
 
             if (roleTypes is not null)
             {
-                roleToPermissions = roleToPermissions.Where(x => x.RoleType == roleTypes);
+                roleToPermissions = roleToPermissions.Where(x => roleTypes.Contains(x.RoleType));
+                
             }
 
             if (!_isMultiTenant)
@@ -66,11 +67,7 @@ namespace AuthPermissions.AdminCode.Services
             return tenantId == null
                 ? MapToRoleWithPermissionNamesDto(roleToPermissions)
                 : MapToRoleWithPermissionNamesDto(roleToPermissions
-                    .Where(x => x.RoleType == RoleTypes.Normal
-                                || (x.RoleType == RoleTypes.TenantAutoAdd
-                                || x.RoleType == RoleTypes.TenantAdminAdd
-                                || x.RoleType == RoleTypes.TenantCreated)
-                                   & (x.Tenants.Select(y => y.TenantId).Contains((int)tenantId) || x.CreatedByTenantId == tenantId)));
+                    .Where(x => (x.Tenants.Select(y => y.TenantId).Contains((int)tenantId) || x.CreatedByTenantId == tenantId)));
         }
 
         /// <summary>

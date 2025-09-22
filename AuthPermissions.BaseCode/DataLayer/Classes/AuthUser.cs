@@ -27,7 +27,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             ChangeUserNameAndEmailWithChecks(email, userName);
 
             if (roles == null) throw new ArgumentNullException(nameof(roles));
-            _userRoles = new HashSet<UserToRole>(roles.Select(x => new UserToRole(userId, x)));
+            _userRoles = [.. roles.Select(x => new UserToRole(userId, x))];
             UserTenant = userTenant;
         }
 
