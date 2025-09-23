@@ -45,4 +45,6 @@ public class AddNewTenantDto
     /// Optional: A list of regions for the user to pick from.
     /// </summary>
     public List<string> PossibleRegions { get; set; }
+
+    public string ShardingName { get; set; }
 }

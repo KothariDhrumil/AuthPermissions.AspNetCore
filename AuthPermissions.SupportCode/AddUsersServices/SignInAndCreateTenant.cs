@@ -138,13 +138,23 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
             //---------------------------------------------------------------
             // 1. Handle sharding parts, including getting the Name of ShardingEntry 
 
-            if (_options.TenantType.IsSharding())
+            if (_options.TenantType.IsSharding() && string.IsNullOrEmpty(tenantData.ShardingName))
             {
                 var shardingStatus = await SetupShardingPartsAsync(tenantData, versionData);
                 if (status.CombineStatuses(shardingStatus).HasErrors)
                     return status;
 
                 shardingEntryName = shardingStatus.Result;
+            }
+            else if (_options.TenantType.IsSharding() && !string.IsNullOrEmpty(tenantData.ShardingName))
+            {
+                //They have provided the name of the ShardingEntry to use
+                shardingEntry = _getSetShardingEntries.GetSingleShardingEntry(tenantData.ShardingName);
+                if (shardingEntry == null)
+                    return status.AddErrorFormatted("MissingDatabaseInformation".ClassLocalizeKey(this, true),
+                        $"The ShardingEntry named '{tenantData.ShardingName}' wasn't found.");
+                shardingEntryName = shardingEntry.Name;
+                _hasOwnDb = tenantData.HasOwnDb;
             }
 
             //---------------------------------------------------------------
