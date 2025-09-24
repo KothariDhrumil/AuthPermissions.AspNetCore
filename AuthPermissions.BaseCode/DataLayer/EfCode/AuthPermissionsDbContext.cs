@@ -317,8 +317,6 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
             modelBuilder.Entity<CustomerAccount>()
                 .HasIndex(x => x.PhoneNumber)
                 .IsUnique();
-            modelBuilder.Entity<CustomerAccount>()
-                .HasIndex(x => x.Email);
 
             modelBuilder.Entity<CustomerTenantLink>()
                 .HasKey(x => x.CustomerTenantLinkId);

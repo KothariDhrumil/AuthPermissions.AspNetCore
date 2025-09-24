@@ -24,12 +24,20 @@ public class CustomerAccount
     [MaxLength(128)]
     public string? LastName { get; set; }
 
+    [MaxLength(256)]
+    public string? Email { get; set; }
+
     /// <summary>
     /// Customer's phone number (login identifier)
     /// </summary>
     [Required, MaxLength(32)]
     public string PhoneNumber { get; set; } = default!;
 
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [MaxLength(64)]
+    public string? Status { get; set; }
 
     public ICollection<CustomerTenantLink> TenantLinks { get; set; } = new List<CustomerTenantLink>();
 }
