@@ -310,18 +310,27 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
 
             // Customers
             modelBuilder.Entity<CustomerAccount>()
+                .HasKey(x => x.GlobalCustomerId);
+            modelBuilder.Entity<CustomerAccount>()
+                .HasIndex(x => x.GlobalUserId)
+                .IsUnique();
+            modelBuilder.Entity<CustomerAccount>()
                 .HasIndex(x => x.PhoneNumber)
                 .IsUnique();
             modelBuilder.Entity<CustomerAccount>()
-                .Property(x => x.PhoneNumber).IsRequired();
+                .HasIndex(x => x.Email);
 
             modelBuilder.Entity<CustomerTenantLink>()
-                .HasIndex(x => new { x.CustomerId, x.TenantId })
+                .HasKey(x => x.CustomerTenantLinkId);
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasIndex(x => new { x.GlobalCustomerId, x.TenantId })
                 .IsUnique();
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasIndex(x => x.TenantId);
             modelBuilder.Entity<CustomerTenantLink>()
                 .HasOne(x => x.Customer)
                 .WithMany(x => x.TenantLinks)
-                .HasForeignKey(x => x.CustomerId)
+                .HasForeignKey(x => x.GlobalCustomerId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

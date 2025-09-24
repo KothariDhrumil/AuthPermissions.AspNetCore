@@ -12,14 +12,16 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes;
 public class CustomerTenantLink
 {
     [Key]
-    public Guid Id { get; set; }
+    public int CustomerTenantLinkId { get; set; }
 
     [Required]
-    public Guid CustomerId { get; set; }
-
-    [ForeignKey(nameof(CustomerId))]
-    public CustomerAccount Customer { get; set; }
+    public Guid GlobalCustomerId { get; set; }
+        
+    [ForeignKey(nameof(GlobalCustomerId))]
+    public CustomerAccount Customer { get; set; } = default!;
 
     [Required]
     public int TenantId { get; set; }
+
+    
 }

@@ -12,18 +12,24 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes;
 public class CustomerAccount
 {
     [Key]
-    public Guid Id { get; set; }
+    public Guid GlobalCustomerId { get; set; } // PK
+
+    // FK to AspNetUsers (string/GUID)
+    [Required]
+    public string GlobalUserId { get; set; } = default!;
+
+    [MaxLength(128)]
+    public string? FirstName { get; set; }
+
+    [MaxLength(128)]
+    public string? LastName { get; set; }
 
     /// <summary>
     /// Customer's phone number (login identifier)
     /// </summary>
     [Required, MaxLength(32)]
-    public string PhoneNumber { get; set; }
+    public string PhoneNumber { get; set; } = default!;
 
-    [MaxLength(256)]
-    public string DisplayName { get; set; }
-
-    public bool IsActive { get; set; } = true;
 
     public ICollection<CustomerTenantLink> TenantLinks { get; set; } = new List<CustomerTenantLink>();
 }
