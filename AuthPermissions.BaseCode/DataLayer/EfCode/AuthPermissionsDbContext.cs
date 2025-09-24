@@ -17,6 +17,16 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
         private readonly ICustomConfiguration _customConfiguration;
 
         /// <summary>
+        /// The list of central customer accounts
+        /// </summary>
+        public DbSet<CustomerAccount> CustomerAccounts { get; set; }
+
+        /// <summary>
+        /// Links customer accounts to tenants
+        /// </summary>
+        public DbSet<CustomerTenantLink> CustomerTenantLinks { get; set; }
+
+        /// <summary>
         /// ctor
         /// </summary>
         /// <param name="options"></param>
@@ -109,8 +119,6 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                 }
                 else if (Database.IsNpgsql())
                 {
-                    //see https://www.npgsql.org/efcore/modeling/concurrency.html
-                    //and https://github.com/npgsql/efcore.pg/issues/19#issuecomment-253346255
                     entityType.AddProperty("xmin", typeof(uint))
                         .SetColumnType("xid");
                     entityType.FindProperty("xmin")
@@ -299,6 +307,22 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                         j.HasKey("TenantPlanId", "RoleId");
                         j.HasIndex("RoleId");
                     });
+
+            // Customers
+            modelBuilder.Entity<CustomerAccount>()
+                .HasIndex(x => x.PhoneNumber)
+                .IsUnique();
+            modelBuilder.Entity<CustomerAccount>()
+                .Property(x => x.PhoneNumber).IsRequired();
+
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasIndex(x => new { x.CustomerId, x.TenantId })
+                .IsUnique();
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasOne(x => x.Customer)
+                .WithMany(x => x.TenantLinks)
+                .HasForeignKey(x => x.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
