@@ -310,7 +310,12 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
 
             // Customers
             modelBuilder.Entity<CustomerAccount>()
-                .HasKey(x => x.GlobalCustomerId);
+                .HasKey(x => x.GlobalCustomerId); 
+
+            modelBuilder.Entity<CustomerAccount>()
+                .Property(x=>x.GlobalCustomerId)
+                .HasDefaultValueSql("NEWSEQUENTIALID()"); 
+
             modelBuilder.Entity<CustomerAccount>()
                 .HasIndex(x => x.GlobalUserId)
                 .IsUnique();
