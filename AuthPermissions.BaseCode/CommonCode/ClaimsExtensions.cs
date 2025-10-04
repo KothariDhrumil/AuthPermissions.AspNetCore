@@ -58,16 +58,30 @@ namespace AuthPermissions.BaseCode.CommonCode
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public static string GetDatabaseInfoNameFromUser(this ClaimsPrincipal user)
+        public static string GetDatabaseInfoName(this ClaimsPrincipal user)
         {
             return user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.DatabaseInfoNameType)?.Value;
         }
 
-        public static int? GetTenantIdFromUser(this ClaimsPrincipal user)
+        public static int? GetTenantId(this ClaimsPrincipal user)
         {
             var tenantId = user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.TenantIdClaimType)?.Value;
             return string.IsNullOrEmpty(tenantId) ? null : Convert.ToInt16(tenantId);
         }
+
+
+        public static string GetGlobalCustomerId(this ClaimsPrincipal user)
+        {
+            var globalCustomerId = user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.GlobalCustomerId)?.Value;
+            return string.IsNullOrEmpty(globalCustomerId) ? string.Empty : globalCustomerId;
+        }
+
+        public static string GetLoggedInUserRole(this ClaimsPrincipal user)
+        {
+            var role = user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.LoggedInUserRole)?.Value;
+            return string.IsNullOrEmpty(role) ? string.Empty : role;
+        }
+
 
 
     }

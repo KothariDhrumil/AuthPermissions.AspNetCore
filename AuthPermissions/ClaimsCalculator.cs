@@ -59,9 +59,7 @@ namespace AuthPermissions
             //var permissionList= permissions?.ConvertPackedPermissionToNames(_options.InternalData.EnumPermissionsType);
 
             if (permissions != null)
-                result.Add(new Claim(PermissionConstants.PackedPermissionClaimType, permissions));
-             
-            
+                result.Add(new Claim(PermissionConstants.PackedPermissionClaimType, permissions));          
                        
             if (_options.TenantType.IsMultiTenant())
                 result.AddRange(GetMultiTenantClaims(userWithTenant.UserTenant));
@@ -72,6 +70,7 @@ namespace AuthPermissions
                 if (extraClaim != null)
                     result.Add(extraClaim);
             }
+            result.Add(new Claim(PermissionConstants.LoggedInUserRole, PermissionConstants.TenantRole));
 
             return result;
         }

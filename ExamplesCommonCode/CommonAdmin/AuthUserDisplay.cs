@@ -23,6 +23,7 @@ namespace ExamplesCommonCode.CommonAdmin
         public bool HasTenant => TenantName != null;
         public string TenantName { get; private set; }
 
+        
         public static IQueryable<AuthUserDisplay> TurnIntoDisplayFormat(IQueryable<AuthUser> inQuery)
         {
             return inQuery.Select(x => new AuthUserDisplay
@@ -31,7 +32,7 @@ namespace ExamplesCommonCode.CommonAdmin
                 Email = x.Email,
                 UserId = x.UserId,
                 RoleNames = x.UserRoles.Select(y => y.Role.RoleName).ToArray(),
-                TenantName = x.UserTenant.TenantFullName
+                TenantName = x.UserTenant.TenantFullName,
             });
         }
 
