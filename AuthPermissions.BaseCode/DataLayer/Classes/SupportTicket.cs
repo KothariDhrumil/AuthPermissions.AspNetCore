@@ -13,7 +13,7 @@ public class SupportTicket
     public string Message { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
     public string Method { get; set; } = string.Empty;
-    public HttpStatusCode Status { get; set; }
+    public HttpStatusCode StatusCode { get; set; }
     public string StatusText { get; set; } = string.Empty;
     public string UserAgent { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
@@ -24,7 +24,7 @@ public class SupportTicket
     public string? UserId { get; set; }
     public int? TenantId { get; set; }
     public string? Notes { get; set; }
-    public TicketStatus State { get; set; } = TicketStatus.Open;
+    public TicketStatus TicketStatus { get; set; } = TicketStatus.Open;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public TicketPriority Priority { get; set; } = TicketPriority.Medium;
