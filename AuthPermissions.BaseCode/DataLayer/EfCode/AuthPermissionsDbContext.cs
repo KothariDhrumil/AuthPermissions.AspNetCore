@@ -97,6 +97,7 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
 
         public DbSet<TenantPlan> TenantPlans { get; set; }
 
+        public DbSet<SupportTicket> SupportTickets { get; set; }
         /// <summary>
         /// Set up AuthP's setup
         /// </summary>
@@ -335,6 +336,21 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                 .WithMany(x => x.TenantLinks)
                 .HasForeignKey(x => x.GlobalCustomerId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SupportTicket>(b =>
+            {
+                b.ToTable("SupportTickets", "authp");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Message).IsRequired();
+                b.Property(x => x.Url).HasMaxLength(2048);
+                b.Property(x => x.Method).HasMaxLength(16);
+                b.Property(x => x.StatusText).HasMaxLength(256);
+                b.Property(x => x.UserAgent).HasMaxLength(1024);
+                b.Property(x => x.CorrelationId).HasMaxLength(128);
+                b.HasIndex(x => x.CorrelationId);
+                b.HasIndex(x => x.CreatedAt);
+                b.HasIndex(x => x.TenantId);
+            });
         }
     }
 }
