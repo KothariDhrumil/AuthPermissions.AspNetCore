@@ -41,6 +41,6 @@ namespace AuthPermissions.BaseCode.PermissionsCode
 
         public const string TenantRole = "TenantRole";
 
-
+        public const string TenantCustomerId = "TenantCustomerId";
     }
 }

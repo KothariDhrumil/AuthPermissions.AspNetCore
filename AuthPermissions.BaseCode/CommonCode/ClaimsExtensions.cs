@@ -68,8 +68,8 @@ namespace AuthPermissions.BaseCode.CommonCode
             var tenantId = user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.TenantIdClaimType)?.Value;
             return string.IsNullOrEmpty(tenantId) ? null : Convert.ToInt16(tenantId);
         }
-
-
+        
+        
         public static string GetGlobalCustomerId(this ClaimsPrincipal user)
         {
             var globalCustomerId = user?.Claims.SingleOrDefault(x => x.Type == PermissionConstants.GlobalCustomerId)?.Value;
