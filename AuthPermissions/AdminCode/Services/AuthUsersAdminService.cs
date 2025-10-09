@@ -281,7 +281,7 @@ namespace AuthPermissions.AdminCode.Services
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>status</returns>
         public async Task<IStatusGeneric> UpdateUserAsync(string userId,
-            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null, string firstName = null, string lastname = null, string phoneNumber = null)
+            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null)
         {
             if (userId == null) throw new ArgumentNullException(nameof(userId));
 
@@ -304,7 +304,7 @@ namespace AuthPermissions.AdminCode.Services
 
             //Now we update the existing AuthUser's email and userName
             authUserToUpdate.ChangeUserNameAndEmailWithChecks(email, userName);
-
+          
             //Get current tenant as roleNames needs tenant
             var foundTenant = foundUserStatus.Result.UserTenant;
             if (foundTenant != null && tenantName == null && roleIds != null)

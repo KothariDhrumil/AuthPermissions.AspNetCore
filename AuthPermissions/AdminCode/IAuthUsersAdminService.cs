@@ -86,7 +86,7 @@ namespace AuthPermissions.AdminCode
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>status</returns>
         Task<IStatusGeneric> UpdateUserAsync(string userId,
-            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null, string firstName = null, string lastName = null, string PhoneNumber = null);
+            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null);
 
         /// <summary>
         /// This will delete the AuthUser with the given userId

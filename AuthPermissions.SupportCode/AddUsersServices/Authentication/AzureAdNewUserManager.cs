@@ -172,4 +172,9 @@ public class AzureAdNewUserManager : IAddNewUserManager
 
         throw new AuthPermissionsException($"Could not {string.Join(" or ", approaches)} the Azure AD user.");
     }
+
+    public Task<IStatusGeneric> UpdateUserNameAsync(string userId, string firstName, string lastName)
+    {
+        throw new NotImplementedException();
+    }
 }

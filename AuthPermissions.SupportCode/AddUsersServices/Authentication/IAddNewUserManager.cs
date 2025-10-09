@@ -57,4 +57,13 @@ public interface IAddNewUserManager
     /// <param name="userId"></param>
     /// <returns></returns>
     Task<IStatusGeneric> RemoveAuthUserAsync(string userId);
+
+    /// <summary>
+    /// Updates the user's first and last name
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="firstName"></param>
+    /// <param name="lastName"></param>
+    /// <returns></returns>
+    Task<IStatusGeneric> UpdateUserNameAsync(string userId, string firstName, string lastName);
 }
