@@ -41,5 +41,10 @@ namespace ExamplesCommonCode.CommonAdmin
         public string TenantName { set; get; }
 
 
+        public string FirstName { set; get; }
+        public string LastName { set; get; }
+
+
+
     }
 }

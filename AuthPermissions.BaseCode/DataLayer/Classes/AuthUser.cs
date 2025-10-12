@@ -20,7 +20,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
 
         private AuthUser() { } //Needed for EF Core
 
-        private AuthUser(string userId, string email, string userName, List<RoleToPermissions> roles, Tenant userTenant)
+        private AuthUser(string userId, string email, string userName, List<RoleToPermissions> roles, Tenant userTenant,string firstName,string lastName, string phoneNumber)
         {
             UserId = userId ?? throw new ArgumentNullException(nameof(userId));
 
@@ -29,6 +29,9 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             if (roles == null) throw new ArgumentNullException(nameof(roles));
             _userRoles = [.. roles.Select(x => new UserToRole(userId, x))];
             UserTenant = userTenant;
+            FirstName = firstName;
+            LastName = lastName;
+            PhoneNumber = phoneNumber;
         }
 
         /// <summary>
@@ -52,6 +55,11 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// </summary>
         [MaxLength(AuthDbConstants.UserNameSize)]
         public string UserName { get; private set; }
+
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string PhoneNumber { get; set; }
+
 
         /// <summary>
         /// If true the user is disabled, which means no AuthP claims will be added to its claims
@@ -97,7 +105,6 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         }
 
 
-
         /// <summary>
         /// Define a user with there default roles and optional tenant
         /// </summary>
@@ -108,7 +115,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <param name="localizeDefault">This provides the localize service</param>
         /// <param name="userTenant">optional: defines multi-tenant tenant for this user</param>
         public static IStatusGeneric<AuthUser> CreateAuthUser(string userId, string email,
-            string userName, List<RoleToPermissions> roles, IDefaultLocalizer localizeDefault,
+            string userName, string firstName, string lastName, string phoneNumber, List<RoleToPermissions> roles, IDefaultLocalizer localizeDefault,
             Tenant userTenant = null)
         {
             var status = new StatusGenericLocalizer<AuthUser>(localizeDefault);
@@ -117,7 +124,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             if (status.HasErrors)
                 return status;
 
-            return status.SetResult(new AuthUser(userId, email, userName, roles, userTenant));
+            return status.SetResult(new AuthUser(userId, email, userName, roles, userTenant,firstName,lastName,phoneNumber));
         }
 
 
@@ -127,7 +134,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <returns></returns>
         public override string ToString()
         {
-            var tenantString = TenantId == null ? "" 
+            var tenantString = TenantId == null ? ""
                 : (UserTenant == null ? ", has an tenant" : $", linked to {UserTenant.TenantFullName}");
             var rolesString = _userRoles == null ? "" : $", roles = {string.Join(", ", _userRoles.Select(x => x.RoleId))}";
             return $"UserName = {UserName}, Email = {Email}, UserId = {UserId}{rolesString}{tenantString}.";

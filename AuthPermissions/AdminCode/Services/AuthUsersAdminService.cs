@@ -50,7 +50,7 @@ namespace AuthPermissions.AdminCode.Services
         public IQueryable<AuthUser> QueryAuthUsers(string dataKey = null, string databaseInfoName = null)
         {
             if (dataKey == null)
-                return _context.AuthUsers;
+                return _context.AuthUsers.Where(x => x.UserTenant == null);
 
             if (!_options.TenantType.IsSharding())
                 //Not sharding so just check the DataKey
@@ -230,7 +230,7 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="tenantName">optional: full name of the tenant</param>
         /// <returns>Status, with created AuthUser</returns>
         public async Task<IStatusGeneric<AuthUser>> AddNewUserAsync(string userId, string email,
-            string userName, List<int> roleIds, string tenantName = null)
+            string userName, string firstName, string lastName, string phoneNumber, List<int> roleIds, string tenantName = null)
         {
             var status = new StatusGenericLocalizer<AuthUser>(_localizeDefault);
             status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true),
@@ -255,7 +255,7 @@ namespace AuthPermissions.AdminCode.Services
             if (status.CombineStatuses(rolesStatus).HasErrors)
                 return status;
 
-            var authUserStatus = AuthUser.CreateAuthUser(userId, email, userName, rolesStatus.Result, _localizeDefault, foundTenant);
+            var authUserStatus = AuthUser.CreateAuthUser(userId, email, userName, firstName, lastName, phoneNumber, rolesStatus.Result, _localizeDefault, foundTenant);
             if (status.CombineStatuses(authUserStatus).HasErrors)
                 return status;
 
@@ -281,7 +281,7 @@ namespace AuthPermissions.AdminCode.Services
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>status</returns>
         public async Task<IStatusGeneric> UpdateUserAsync(string userId,
-            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null)
+            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null ,string firstName = null, string lastName=null)
         {
             if (userId == null) throw new ArgumentNullException(nameof(userId));
 
@@ -293,6 +293,9 @@ namespace AuthPermissions.AdminCode.Services
 
             email ??= foundUserStatus.Result.Email;
             userName ??= foundUserStatus.Result.UserName;
+            firstName ??= foundUserStatus.Result.FirstName;
+            lastName ??= foundUserStatus.Result.LastName;
+
             status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true),
                 $"Successfully updated a AuthUser with the name {userName ?? email}");
 
@@ -304,7 +307,7 @@ namespace AuthPermissions.AdminCode.Services
 
             //Now we update the existing AuthUser's email and userName
             authUserToUpdate.ChangeUserNameAndEmailWithChecks(email, userName);
-          
+
             //Get current tenant as roleNames needs tenant
             var foundTenant = foundUserStatus.Result.UserTenant;
             if (foundTenant != null && tenantName == null && roleIds != null)
@@ -439,7 +442,7 @@ namespace AuthPermissions.AdminCode.Services
                         continue;
                     case SyncAuthUserChangeTypes.Create:
                         status.CombineStatuses(await AddNewUserAsync(syncChange.UserId, syncChange.Email,
-                            syncChange.UserName, syncChange.RoleIds, syncChange.TenantName));
+                            syncChange.UserName, string.Empty, string.Empty, string.Empty, syncChange.RoleIds, syncChange.TenantName));
                         break;
                     case SyncAuthUserChangeTypes.Update:
                         status.CombineStatuses(await UpdateUserAsync(syncChange.UserId, syncChange.Email,

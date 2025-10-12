@@ -140,11 +140,12 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
         if (status.HasErrors)
             return status;
 
-        newUser.Roles = tenant.TenantRoles.Select(x => x.RoleId).ToList();
-        var tenantName = tenant.TenantFullName;
+        newUser.Roles = newUser.TenantId == null ? null : tenant.TenantRoles.Select(x => x.RoleId).ToList();
+        
+        var tenantName = tenant?.TenantFullName;
 
         return await _authUsersAdmin.AddNewUserAsync(user.Id,
-            newUser.Email, newUser.UserName, newUser.Roles, tenantName);
+            newUser.Email, newUser.UserName, newUser.FirstName,newUser.LastName,newUser.PhoneNumber, newUser.Roles, tenantName);
     }
 
     /// <summary>
