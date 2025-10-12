@@ -384,9 +384,24 @@ namespace AuthPermissions.AdminCode.Services
             if (status.CombineStatuses(tenantRolesStatus).HasErrors)
                 return status;
 
-            var updateStatus = tenant.UpdateTenantRoles(tenantRolesStatus.Result, _localizeDefault);
-            if (updateStatus.HasErrors)
-                return updateStatus;
+
+            if (tenant.IsHierarchical)
+            {
+                //We need to load the main tenant and any children and this is the simplest way to do that
+                var tenantsWithChildren = await _context.Tenants
+                    .Include(x => x.Parent)
+                    .Include(x => x.Children)
+                    .Where(x => x.TenantFullName.StartsWith(tenant.TenantFullName))
+                    .ToListAsync();
+
+                var existingTenantWithChildren = tenantsWithChildren
+                    .Single(x => x.TenantId == tenantId);
+                var updateStatus = tenant.UpdateTenantRoles(tenantRolesStatus.Result, _localizeDefault);
+
+                status.CombineStatuses(updateStatus);                            
+            }
+            if (status.CombineStatuses(tenantRolesStatus).HasErrors)
+                return status;
 
             return await _context.SaveChangesWithChecksAsync(_localizeDefault);
         }

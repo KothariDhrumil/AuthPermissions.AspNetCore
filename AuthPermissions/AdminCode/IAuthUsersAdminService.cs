@@ -113,5 +113,7 @@ namespace AuthPermissions.AdminCode
         /// <param name="changesToApply"></param>
         /// <returns>Status</returns>
         Task<IStatusGeneric> ApplySyncChangesAsync(IEnumerable<SyncAuthUserWithChange> changesToApply);
+
+        
     }
 }

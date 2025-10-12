@@ -96,6 +96,8 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             }
         }
 
+
+
         /// <summary>
         /// Define a user with there default roles and optional tenant
         /// </summary>
