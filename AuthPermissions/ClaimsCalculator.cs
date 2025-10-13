@@ -99,11 +99,16 @@ namespace AuthPermissions
                     .Where(x => x.UserId == userId && x.TenantId != null)
                     .SelectMany(x => x.UserTenant.TenantRoles).ToList();
 
+                if (permissionsForAllRoles.Count == 0)
+                {
+                    permissionsForAllRoles.AddRange(userTenantPermissions.Select(x => x.PackedPermissionsInRole));
+                }
+                
                 var autoAddPermissions = userTenantPermissions
                     .Where(y => y.RoleType == RoleTypes.TenantAutoAdd)
                     .Select(z => z.PackedPermissionsInRole).ToList();
 
-
+                
                 if (autoAddPermissions.Count != 0)
                     permissionsForAllRoles.AddRange(autoAddPermissions);
 
@@ -112,7 +117,7 @@ namespace AuthPermissions
                 if (userTeant is not null)
                 {
                     List<string> permissionToBeRemoved = [];
-
+                  
                     var tenantPermissions = userTenantPermissions.Select(x => x.PackedPermissionsInRole).ToHashSet();
 
                     foreach (var permissions in permissionsForAllRoles)
