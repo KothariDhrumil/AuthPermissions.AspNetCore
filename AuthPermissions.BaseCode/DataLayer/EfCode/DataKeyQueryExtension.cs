@@ -66,7 +66,9 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
         private static LambdaExpression SetupMultiTenantQueryFilter<TEntity>(IDataKeyFilterReadOnly dataKey)
             where TEntity : class, IDataKeyFilterReadOnly
         {
-            Expression<Func<TEntity, bool>> filter = x => x.DataKey.StartsWith(dataKey.DataKey);
+            Expression<Func<TEntity, bool>> filter = x =>
+                dataKey.DataKey == MultiTenantExtensions.DataKeyNoQueryFilter ||
+                x.DataKey.StartsWith(dataKey.DataKey);
             return filter;
         }
 

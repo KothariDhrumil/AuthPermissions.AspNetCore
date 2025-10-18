@@ -14,22 +14,22 @@ namespace ExamplesCommonCode.CommonAdmin
     /// </summary>
     public class MultiTenantRoleDeleteConfirmDto
     {
-        public string RoleName { get; set; }
+        public int RoleId { get; set; }
         public string ConfirmDelete { get; set; }
         public List<UserOrTenantDto> UsedBy { get; set; }
 
-        public static async Task<MultiTenantRoleDeleteConfirmDto> FormRoleDeleteConfirmDtoAsync(string roleName, IAuthRolesAdminService rolesAdminService)
+        public static async Task<MultiTenantRoleDeleteConfirmDto> FormRoleDeleteConfirmDtoAsync(int roleId, IAuthRolesAdminService rolesAdminService)
         {
             var result = new MultiTenantRoleDeleteConfirmDto
             {
-                RoleName = roleName
+                RoleId = roleId
             };
-            result.UsedBy = (await rolesAdminService.QueryUsersUsingThisRole(roleName)
+            result.UsedBy = (await rolesAdminService.QueryUsersUsingThisRole(roleId)
                     .Select(x => new { x.Email, x.UserName })
                     .ToListAsync())
                 .Select(x => new UserOrTenantDto(true, x.UserName ?? x.Email))
                 .ToList();
-            result.UsedBy.AddRange(await rolesAdminService.QueryTenantsUsingThisRole(roleName)
+            result.UsedBy.AddRange(await rolesAdminService.QueryTenantsUsingThisRole(roleId)
                 .Select(x => new UserOrTenantDto(false, x.TenantFullName))
                 .ToListAsync());
 

@@ -32,7 +32,7 @@ namespace AuthPermissions.AspNetCore.GetDataKeyCode
             DataKey = overrideLink.dataKey ?? accessor.HttpContext?.User.GetAuthDataKeyFromUser();
 
             var databaseDataName = overrideLink.connectionName
-                                   ?? accessor.HttpContext?.User.GetDatabaseInfoNameFromUser();
+                                   ?? accessor.HttpContext?.User.GetDatabaseInfoName();
 
             if (databaseDataName != null)
                 ConnectionString = shardingService.FormConnectionString(databaseDataName);

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
+using Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +29,7 @@ namespace AuthPermissions.AspNetCore.StartupServices
         /// <returns></returns>
         public async ValueTask ApplyYourChangeAsync(IServiceProvider scopedServices)
         {     
-            var userManager = scopedServices.GetRequiredService<UserManager<IdentityUser>>();
+            var userManager = scopedServices.GetRequiredService<UserManager<ApplicationUser>>();
             var config = scopedServices.GetRequiredService<IConfiguration>();
             var demoUsers = config["DemoUsers"];
 

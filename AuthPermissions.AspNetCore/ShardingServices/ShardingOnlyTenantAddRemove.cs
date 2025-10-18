@@ -83,12 +83,12 @@ public class ShardingOnlyTenantAddRemove : IShardingOnlyTenantAddRemove
 
         //2. Now we can create the tenant, which in turn will setup the database via your ITenantChangeService implementation
         if (_options.TenantType.IsSingleLevel())
-            status.CombineStatuses(await _tenantAdmin.AddSingleTenantAsync(dto.TenantName, dto.TenantRoleNames,
+            status.CombineStatuses(await _tenantAdmin.AddSingleTenantAsync(dto.TenantName, dto.TenantRoleIds,
                 dto.HasOwnDb, shardingEntry?.Name));
         else
         {
             status.CombineStatuses(await _tenantAdmin.AddHierarchicalTenantAsync(dto.TenantName,
-                dto.ParentTenantId, dto.TenantRoleNames,
+                dto.ParentTenantId, dto.TenantRoleIds,
                 dto.HasOwnDb, shardingEntry?.Name));
         }
 

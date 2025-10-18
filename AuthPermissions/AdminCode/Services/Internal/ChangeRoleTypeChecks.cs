@@ -65,7 +65,7 @@ internal class ChangeRoleTypeChecks
 
     private async Task<FormattableString> UserErrorMessageAsync(string roleName, bool filterOutNonTenantUsers)
     {
-        var query = _context.AuthUsers.Where(x => x.UserRoles.Any(y => y.RoleName == roleName));
+        var query = _context.AuthUsers.Where(x => x.UserRoles.Any(y => y.Role.RoleName == roleName));
         if (filterOutNonTenantUsers)
             query = query.Where(x => x.TenantId != null);
         

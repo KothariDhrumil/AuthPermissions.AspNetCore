@@ -24,7 +24,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         {
             UserId = userId ?? throw new ArgumentNullException(nameof(userId));
             Role = role ?? throw new ArgumentNullException(nameof(role));
-            RoleName = role.RoleName;
+            RoleId = role.RoleId;
         }
 
         /// <summary>
@@ -35,17 +35,16 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         public string UserId { get; private set; }
 
         /// <summary>
-        /// The RoleName is part of the key, which ensure that a user only has a role once
+        /// The RoleId is part of the key, which ensure that a user only has a role once
         /// It is also a foreign key for the RoleToPermissions
         /// </summary>
         [Required(AllowEmptyStrings = false)]
-        [MaxLength(AuthDbConstants.RoleNameSize)]
-        public string RoleName { get; private set; }
+        public int RoleId { get; private set; }
 
         /// <summary>
         /// Link to the RoleToPermissions
         /// </summary>
-        [ForeignKey(nameof(RoleName))] 
+        [ForeignKey(nameof(RoleId))] 
         public RoleToPermissions Role { get; private set; }
     }
 }

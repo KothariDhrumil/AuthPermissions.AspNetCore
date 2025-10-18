@@ -157,7 +157,7 @@ public class InviteNewUserService : IInviteNewUserService
                 {
                     //Check that the Roles for the invited user are acceptable for a tenant user
                     var badRoles = await _context.RoleToPermissions.Where(x =>
-                            invitedUser.Roles.Contains(x.RoleName) 
+                            invitedUser.Roles.Contains(x.RoleId) 
                             && (x.RoleType == RoleTypes.HiddenFromTenant || x.RoleType == RoleTypes.TenantAutoAdd))
                         .Select(x => x.RoleName).ToListAsync();
                     if (badRoles.Any())

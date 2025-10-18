@@ -29,5 +29,18 @@ namespace AuthPermissions.BaseCode.PermissionsCode
         public const char PackedAccessAllPermission = (char) ushort.MaxValue;
 
         public const string AccessAllPermission = "AccessAll";
+
+        public const string TenantIdClaimType = "TenantId";
+
+        // Customer ID Constant
+        public const string GlobalCustomerId = "GlobalCustomerId";
+
+        public const string LoggedInUserRole = "LoggedInUserRole";
+        
+        public const string CustomerRole = "CustomerRole";
+
+        public const string TenantRole = "TenantRole";
+
+        public const string TenantCustomerId = "TenantCustomerId";
     }
 }

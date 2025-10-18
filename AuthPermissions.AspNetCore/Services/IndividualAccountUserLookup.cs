@@ -3,6 +3,7 @@
 
 using AuthPermissions.BaseCode.SetupCode;
 using AuthPermissions.BulkLoadServices.Concrete;
+using Domain;
 using Microsoft.AspNetCore.Identity;
 
 namespace AuthPermissions.AspNetCore.Services
@@ -15,13 +16,13 @@ namespace AuthPermissions.AspNetCore.Services
     /// </summary>
     public class IndividualAccountUserLookup : IFindUserInfoService
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="userManager"></param>
-        public IndividualAccountUserLookup(UserManager<IdentityUser> userManager)
+        public IndividualAccountUserLookup(UserManager<ApplicationUser> userManager)
         {
             _userManager = userManager;
         }

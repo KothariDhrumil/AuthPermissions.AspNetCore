@@ -18,6 +18,11 @@ namespace AuthPermissions.AdminCode
         IQueryable<Tenant> QueryTenants();
 
         /// <summary>
+        /// This simply returns a IQueryable of Parent Tenants
+        /// </summary>
+        /// <returns>query on the AuthP database</returns>
+        IQueryable<Tenant> QueryParentTenants();
+        /// <summary>
         /// This query returns all the end leaf Tenants, which is the bottom of the hierarchy (i.e. no children below it)
         /// </summary>
         /// <returns>query on the AuthP database</returns>
@@ -47,11 +52,11 @@ namespace AuthPermissions.AdminCode
         /// This adds a new, single level  Tenant
         /// </summary>
         /// <param name="tenantName">Name of the new single-level tenant (must be unique)</param>
-        /// <param name="tenantRoleNames">Optional: List of tenant role names</param>
+        /// <param name="tenantRoleIds">Optional: List of tenant role names</param>
         /// <param name="hasOwnDb">Needed if sharding: Is true if this tenant has its own database, else false</param>
         /// <param name="databaseInfoName">This is the name of the database information in the shardingsettings file.</param>
         /// <returns>A status containing the <see cref="Tenant"/> class</returns>
-        Task<IStatusGeneric<Tenant>> AddSingleTenantAsync(string tenantName, List<string> tenantRoleNames = null,
+        Task<IStatusGeneric<Tenant>> AddSingleTenantAsync(string tenantName, List<int> tenantRoleIds = null,
             bool? hasOwnDb = false, string databaseInfoName = null);
 
         /// <summary>
@@ -59,21 +64,21 @@ namespace AuthPermissions.AdminCode
         /// </summary>
         /// <param name="tenantName">Name of the new tenant. This will be prefixed with the parent's tenant name to make it unique</param>
         /// <param name="parentTenantId">The primary key of the parent. If 0 then the new tenant is at the top level</param>
-        /// <param name="tenantRoleNames">Optional: List of tenant role names</param>
+        /// <param name="tenantRoleIds">Optional: List of tenant role names</param>
         /// <param name="hasOwnDb">Needed if sharding: Is true if this tenant has its own database, else false</param>
         /// <param name="databaseInfoName">This is the name of the database information in the shardingsettings file.</param>
         /// <returns>A status containing the <see cref="Tenant"/> class</returns>
         Task<IStatusGeneric<Tenant>> AddHierarchicalTenantAsync(string tenantName, int parentTenantId,
-            List<string> tenantRoleNames = null,
+            List<int> tenantRoleIds = null,
             bool? hasOwnDb = null, string databaseInfoName = null);
 
         /// <summary>
         /// This replaces the <see cref="Tenant.TenantRoles"/> in the tenant with <see param="tenantId"/> primary key
         /// </summary>
         /// <param name="tenantId">Primary key of the tenant to change</param>
-        /// <param name="newTenantRoleNames">List of RoleName to replace the current tenant's <see cref="Tenant.TenantRoles"/></param>
+        /// <param name="newTenantRoleIds">List of RoleName to replace the current tenant's <see cref="Tenant.TenantRoles"/></param>
         /// <returns></returns>
-        Task<IStatusGeneric> UpdateTenantRolesAsync(int tenantId, List<string> newTenantRoleNames);
+        Task<IStatusGeneric> UpdateTenantRolesAsync(int tenantId, List<int> newTenantRoleIds);
 
         /// <summary>
         /// This updates the name of this tenant to the <see param="newTenantLevelName"/>.
@@ -125,8 +130,9 @@ namespace AuthPermissions.AdminCode
         /// This finds the roles with the given names from the AuthP database. Returns errors if not found
         /// NOTE: The Tenant checks that the role's <see cref="RoleToPermissions.RoleType"/> are valid for a tenant
         /// </summary>
-        /// <param name="tenantRoleNames">List of role name. Can be null, which means no roles to add</param>
+        /// <param name="tenantRoleIds">List of role name. Can be null, which means no roles to add</param>
         /// <returns>Status</returns>
-        Task<IStatusGeneric<List<RoleToPermissions>>> GetRolesWithChecksAsync(List<string> tenantRoleNames);
+        Task<IStatusGeneric<List<RoleToPermissions>>> GetRolesWithChecksAsync(List<int> tenantRoleIds);
+        Task<IQueryable<Tenant>> QueryChildTenants(int parentTenantId);
     }
 }

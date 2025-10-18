@@ -27,8 +27,8 @@ namespace AuthPermissions.BulkLoadServices
             AuthPermissionsOptions options,
             IAuthPServiceFactory<IFindUserInfoService> findUserInfoServiceFactory)
         {
-            if (context == null) throw new ArgumentNullException(nameof(context));
-            if (options == null) throw new ArgumentNullException(nameof(options));
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(options);
 
             IStatusGeneric status = new StatusGenericHandler();
             if (!context.RoleToPermissions.Any())

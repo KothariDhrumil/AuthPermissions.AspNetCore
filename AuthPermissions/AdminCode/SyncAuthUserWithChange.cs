@@ -41,8 +41,9 @@ namespace AuthPermissions.AdminCode
                 OldEmail = authUser.Email;
                 OldUserName = authUser.UserName;
 
-                RoleNames = authUser.UserRoles.Select(x => x.RoleName).ToList();
+                RoleIds = authUser.UserRoles.Select(x => x.Role.RoleId).ToList();
                 TenantName = authUser.UserTenant?.TenantFullName;
+                
             }
 
             if (authenticationUser != null)
@@ -129,12 +130,12 @@ namespace AuthPermissions.AdminCode
         /// <summary>
         /// The AuthRoles for this AuthUser
         /// </summary>
-        public List<string> RoleNames { set; get; }
+        public List<int> RoleIds { set; get; }
 
         /// <summary>
         /// Number of roles, or "not set" if none
         /// </summary>
-        public string NumRoles => RoleNames == null ? "not set" : RoleNames.Count.ToString();
+        public string NumRoles => RoleIds == null ? "not set" : RoleIds.Count.ToString();
 
         /// <summary>
         /// The name of the AuthP Tenant for this AuthUser (can be null)

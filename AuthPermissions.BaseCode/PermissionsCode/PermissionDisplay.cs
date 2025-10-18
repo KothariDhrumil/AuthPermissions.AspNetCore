@@ -58,7 +58,7 @@ namespace AuthPermissions.BaseCode.PermissionsCode
         /// b) Which have a <see cref="ObsoleteAttribute"/> applied to that name
         /// </summary>
         /// <param name="enumType">type of the enum permissions</param>
-        /// <param name="excludeFilteredPermissions">if trie then it won't show permissions where the AutoGenerateFilter is true</param>
+        /// <param name="excludeFilteredPermissions">if true then it won't show permissions where the AutoGenerateFilter is true</param>
         /// <returns>a list of PermissionDisplay classes containing the data</returns>
         public static List<PermissionDisplay> GetPermissionsToDisplay(Type enumType, bool excludeFilteredPermissions) 
         {

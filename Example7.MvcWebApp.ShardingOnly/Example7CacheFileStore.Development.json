@@ -1,4 +1,9 @@
 {
-  "Cache": {},
+  "Cache": {
+    "ShardingEntry-Dk 1-20250726190941": "{\r\n  \"Name\": \"Dk 1-20250726190941\",\r\n  \"DatabaseName\": \"20250726190941-988\",\r\n  \"ConnectionName\": \"CentralServer\",\r\n  \"DatabaseType\": \"SqlServer\"\r\n}",
+    "ShardingEntry-Dk 2-20250727093202": "{\r\n  \"Name\": \"Dk 2-20250727093202\",\r\n  \"DatabaseName\": \"20250727093202-064\",\r\n  \"ConnectionName\": \"CentralServer\",\r\n  \"DatabaseType\": \"SqlServer\"\r\n}",
+    "ShardingEntry-Dk 3-20250727093220": "{\r\n  \"Name\": \"Dk 3-20250727093220\",\r\n  \"DatabaseName\": \"20250727093220-627\",\r\n  \"ConnectionName\": \"EastCoastServer\",\r\n  \"DatabaseType\": \"SqlServer\"\r\n}",
+    "ShardingEntry-Dk 4-20250727120749": "{\r\n  \"Name\": \"Dk 4-20250727120749\",\r\n  \"DatabaseName\": \"20250727120749-652\",\r\n  \"ConnectionName\": \"CentralServer\",\r\n  \"DatabaseType\": \"SqlServer\"\r\n}"
+  },
   "TimeOuts": {}
 }

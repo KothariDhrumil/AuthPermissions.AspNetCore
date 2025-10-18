@@ -12,6 +12,7 @@ using AuthPermissions.SupportCode.AddUsersServices.Authentication;
 using LocalizeMessagesAndErrors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Graph;
 using StatusGeneric;
 
 
@@ -30,10 +31,11 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
     private readonly ILogger _logger;
     private readonly AuthPermissionsDbContext _context;
     private readonly ISignUpGetShardingEntry _getShardingDb;
+    private readonly IGetSetShardingEntries _getSetShardingEntries;
     private readonly IDefaultLocalizer _localizeDefault;
 
     //These two fields below contain sharding data. 
-    private bool? _hasOwnDb = null;              //default setting says the tenant data is in a shared database
+    private bool? _hasOwnDb = false;              //default setting says the tenant data is in a shared database
     //This is used in the temp tenant name and in any new ShardingEntries
     private readonly string _createTimestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss-fff");
 
@@ -46,9 +48,11 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
     /// <param name="localizeProvider"></param>
     /// <param name="logger"></param>
     /// <param name="getShardingDb"></param>
+    /// <param name="getSetShardingEntries"></param>
     public SignInAndCreateTenant(AuthPermissionsOptions options, IAuthTenantAdminService tenantAdmin,
-        IAddNewUserManager addNewUserManager, IAuthPDefaultLocalizer localizeProvider, 
+        IAddNewUserManager addNewUserManager, IAuthPDefaultLocalizer localizeProvider,
         ILogger<SignInAndCreateTenant> logger,
+        IGetSetShardingEntries getSetShardingEntries,
         ISignUpGetShardingEntry getShardingDb = null)
     {
         _options = options;
@@ -58,7 +62,7 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
         _localizeDefault = localizeProvider.DefaultLocalizer;
         _logger = logger;
         _getShardingDb = getShardingDb;
-
+        _getSetShardingEntries = getSetShardingEntries;
         if (!_options.TenantType.IsSharding()) return;
         if (_getShardingDb == null)
             throw new AuthPermissionsException(
@@ -107,6 +111,9 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
 
         //--------------------------------------------------------------
         // Generic tests
+        
+        //TODO : Add transaction, so if something failed then every thing should be roll back.
+
 
         if (tenantData.TenantName == null)
             return status.AddErrorString("NullTenantName".ClassLocalizeKey(this, true),
@@ -125,19 +132,29 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
         //build the tenant and link to a user. We do this within a try / catch to provide the new user to
         //send the timestamp information to the App Admin so that they can find the error. 
         string shardingEntryName = null;    //default setting says that the multi-tenant isn't using sharding
-
+        ShardingEntry shardingEntry = null;
         try
         {
             //---------------------------------------------------------------
             // 1. Handle sharding parts, including getting the Name of ShardingEntry 
 
-            if (_options.TenantType.IsSharding())
+            if (_options.TenantType.IsSharding() && string.IsNullOrEmpty(tenantData.ShardingName))
             {
                 var shardingStatus = await SetupShardingPartsAsync(tenantData, versionData);
                 if (status.CombineStatuses(shardingStatus).HasErrors)
                     return status;
 
                 shardingEntryName = shardingStatus.Result;
+            }
+            else if (_options.TenantType.IsSharding() && !string.IsNullOrEmpty(tenantData.ShardingName))
+            {
+                //They have provided the name of the ShardingEntry to use
+                shardingEntry = _getSetShardingEntries.GetSingleShardingEntry(tenantData.ShardingName);
+                if (shardingEntry == null)
+                    return status.AddErrorFormatted("MissingDatabaseInformation".ClassLocalizeKey(this, true),
+                        $"The ShardingEntry named '{tenantData.ShardingName}' wasn't found.");
+                shardingEntryName = shardingEntry.Name;
+                _hasOwnDb = tenantData.HasOwnDb;
             }
 
             //---------------------------------------------------------------
@@ -192,20 +209,42 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
     private async Task<IStatusGeneric<string>> SetupShardingPartsAsync(AddNewTenantDto tenantData, MultiTenantVersionData versionData)
     {
         var status = new StatusGenericLocalizer<string>(_localizeDefault);
-        _hasOwnDb = GetDataFromVersions(tenantData.Version, versionData.HasOwnDbForEachVersion,
-            nameof(MultiTenantVersionData.HasOwnDbForEachVersion)) ?? tenantData.HasOwnDb;
 
-        if (_hasOwnDb == null)
-            return status.AddErrorString("HasOwnDbNotSet".ClassLocalizeKey(this, true),
-                $"You must set the {nameof(AddNewTenantDto.HasOwnDb)} parameter to true or false.",
-                nameof(AddNewTenantDto.HasOwnDb));
+        ShardingOnlyTenantAddDto dto = new ShardingOnlyTenantAddDto
+        {
+            TenantName = tenantData.TenantName,
+            HasOwnDb = tenantData.HasOwnDb ?? false,
+            DbProviderShortName = AuthPDatabaseTypes.SqlServer.ToString(), // default sql server
+            ConnectionStringName = "DefaultConnection"
+        };
 
-        //Now we need to get the name of the ShardingEntry providing the data to get to its data 
-        //This is done via a developer-written service 
-        var shardingStatus = await _getShardingDb.FindOrCreateShardingEntryAsync(
-            (bool)_hasOwnDb, _createTimestamp, tenantData.Region, tenantData.Version);
 
-        return shardingStatus;
+        ShardingEntry shardingEntry = null;
+        if (_options.TenantType.IsHierarchical() && dto.ParentTenantId != 0)
+        {
+            //if a child hierarchical tenant we don't need to get the ShardingEntry as the parent's ShardingEntry is used
+            var parentStatus = await _tenantAdmin.GetTenantViaIdAsync(dto.ParentTenantId);
+            if (status.CombineStatuses(parentStatus).HasErrors)
+                return status;
+
+            shardingEntry = _getSetShardingEntries.GetSingleShardingEntry(parentStatus.Result.DatabaseInfoName);
+            if (shardingEntry == null)
+                return status.AddErrorFormatted("MissingDatabaseInformation".ClassLocalizeKey(this, true),
+                    $"The ShardingEntry for the parent '{parentStatus.Result.TenantFullName}' wasn't found.");
+        }
+        else
+        {
+            //Its a new sharding tenant, so we need to create a new ShardingEntry entry for this database
+            shardingEntry = dto.FormDatabaseInformation();
+            if ((bool)tenantData.HasOwnDb)
+            {
+
+                if (status.CombineStatuses(_getSetShardingEntries.AddNewShardingEntry(shardingEntry)).HasErrors)
+                    return status;
+                status.SetResult(shardingEntry.Name);
+            }            
+        }        
+        return status;
     }
 
     /// <summary>
@@ -222,17 +261,17 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
     {
         var tenantRoles = GetDataFromVersions(tenantData.Version,
             versionData.TenantRolesForEachVersion,
-            nameof(MultiTenantVersionData.TenantRolesForEachVersion)) ?? new List<string>();
+            nameof(MultiTenantVersionData.TenantRolesForEachVersion)) ?? new List<int>();
 
         //We create a unique name for the tenant at this stage. Once the sign in has correctly created the
         //tenant and the new user, then the tenant name will be set to the sign-in TenantName
         var tempTenantName = $"TempSignIn-{_createTimestamp}";
 
         return _options.TenantType.IsSingleLevel()
-            ? await _tenantAdmin.AddSingleTenantAsync(tempTenantName, tenantRoles, _hasOwnDb, shardingEntryName)
+            ? await _tenantAdmin.AddSingleTenantAsync(tempTenantName, tenantRoles, tenantData.HasOwnDb, shardingEntryName)
             //Note: The added tenant is always a top-level tenant, i.e. it has no parent
-            : await _tenantAdmin.AddHierarchicalTenantAsync(tempTenantName, 
-                0, tenantRoles, _hasOwnDb, shardingEntryName);
+            : await _tenantAdmin.AddHierarchicalTenantAsync(tempTenantName,
+                0, tenantRoles, tenantData.HasOwnDb, shardingEntryName);
     }
 
     /// <summary>
@@ -243,7 +282,7 @@ public class SignInAndCreateTenant : ISignInAndCreateTenant
     /// <param name="tenantData"></param>
     /// <param name="versionData"></param>
     /// <returns></returns>
-    private async Task<IStatusGeneric<AddNewUserDto>> SignInTenantUserAsync(Tenant newTenant, AddNewUserDto newUser, 
+    private async Task<IStatusGeneric<AddNewUserDto>> SignInTenantUserAsync(Tenant newTenant, AddNewUserDto newUser,
         AddNewTenantDto tenantData, MultiTenantVersionData versionData)
     {
         var status = new StatusGenericLocalizer<AddNewUserDto>(_localizeDefault);

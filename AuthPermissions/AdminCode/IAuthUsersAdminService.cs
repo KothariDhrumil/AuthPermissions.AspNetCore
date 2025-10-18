@@ -19,6 +19,8 @@ namespace AuthPermissions.AdminCode
         /// <returns>query on the database</returns>
         IQueryable<AuthUser> QueryAuthUsers(string dataKey = null, string databaseInfoName = null);
 
+        IQueryable<AuthUser> QueryAuthUsers(int tenantId);
+
         /// <summary>
         /// Finds a AuthUser via its UserId. Returns a status with an error if not found
         /// </summary>
@@ -64,12 +66,12 @@ namespace AuthPermissions.AdminCode
         /// <param name="userId"></param>
         /// <param name="email">if not null, then checked to be a valid email</param>
         /// <param name="userName"></param>
-        /// <param name="roleNames">The rolenames of this user</param>
+        /// <param name="roleIds">The rolenames of this user</param>
         /// <param name="tenantName">If null, then keeps current tenant. If "" will remove a tenant link.
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>Status, with created AuthUser</returns>
-        Task<IStatusGeneric<AuthUser>> AddNewUserAsync(string userId, string email,
-            string userName, List<string> roleNames, string tenantName = null);
+        Task<IStatusGeneric<AuthUser>>  AddNewUserAsync(string userId, string email,
+            string userName, string firstName, string lastName, string phoneNumber,List<int> roleIds, string tenantName = null);
 
         /// <summary>
         /// This update an existing AuthUser. This method is designed so you only have to provide data for the parts you want to update,
@@ -79,12 +81,12 @@ namespace AuthPermissions.AdminCode
         /// <param name="userId"></param>
         /// <param name="email">Either provide a email or null. if null, then uses the current user's email</param>
         /// <param name="userName">Either provide a userName or null. if null, then uses the current user's userName</param>
-        /// <param name="roleNames">Either a list of rolenames or null. If null, then keeps its current rolenames.</param>
+        /// <param name="roleIds">Either a list of rolenames or null. If null, then keeps its current rolenames.</param>
         /// <param name="tenantName">If null, then keeps current tenant. If it is <see cref="CommonConstants.EmptyItemName"/> it will remove a tenant link.
         /// Otherwise the user will be linked to the tenant with that name.</param>
         /// <returns>status</returns>
         Task<IStatusGeneric> UpdateUserAsync(string userId,
-            string email = null, string userName = null, List<string> roleNames = null, string tenantName = null);
+            string email = null, string userName = null, List<int> roleIds = null, string tenantName = null, string firstName =null, string lastName = null);
 
         /// <summary>
         /// This will delete the AuthUser with the given userId
@@ -111,5 +113,7 @@ namespace AuthPermissions.AdminCode
         /// <param name="changesToApply"></param>
         /// <returns>Status</returns>
         Task<IStatusGeneric> ApplySyncChangesAsync(IEnumerable<SyncAuthUserWithChange> changesToApply);
+
+        
     }
 }

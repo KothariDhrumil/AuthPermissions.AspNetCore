@@ -1,9 +1,11 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
-using System.ComponentModel.DataAnnotations;
 using AuthPermissions.BaseCode.CommonCode;
 using AuthPermissions.BaseCode.DataLayer.Classes.SupportTypes;
+using RunMethodsSequentially.LockAndRunCode;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthPermissions.BaseCode.DataLayer.Classes
 {
@@ -26,16 +28,20 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <param name="description"></param>
         /// <param name="packedPermissions">The enum values converted to unicode chars</param>
         /// <param name="roleType">Optional: this sets the type of the Role - only used in multi-tenant apps</param>
-        public RoleToPermissions(string roleName, string description, string packedPermissions, RoleTypes roleType = RoleTypes.Normal)
+        /// <param name="createdByTenantId">Created Role by</param>
+        public RoleToPermissions(string roleName, string description, string packedPermissions, RoleTypes roleType = RoleTypes.Normal, int? createdByTenantId = null)
         {
             RoleName = roleName.Trim();
-            Update(packedPermissions, description, roleType);
+            CreatedByTenantId = createdByTenantId;
+            Update(roleName, packedPermissions, description, roleType);
         }
+
+        [Key]
+        public int RoleId { get; set; }
 
         /// <summary>
         /// Name of the role
-        /// </summary>
-        [Key]
+        /// </summary>        
         [Required(AllowEmptyStrings = false)]
         [MaxLength(AuthDbConstants.RoleNameSize)]
         public string RoleName { get; private set; }
@@ -56,6 +62,20 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         [Required(AllowEmptyStrings = false)] //A role must have at least one role in it
         public string PackedPermissionsInRole { get; private set; }
 
+
+        /// <summary>
+        /// The tenant that created this role (null for app/global roles).
+        /// </summary>
+        public int? CreatedByTenantId { get; private set; }
+
+        /// <summary>
+        /// Optional navigation to the tenant that created this role.
+        /// </summary>
+        [ForeignKey(nameof(CreatedByTenantId))]
+        public Tenant CreatedByTenant { get; private set; }
+
+
+
         //----------------------------------------------------
         // Relationships
 
@@ -64,6 +84,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <see cref="RoleTypes.TenantAutoAdd"/> or <see cref="RoleTypes.TenantAdminAdd"/>
         /// </summary>
         public IReadOnlyCollection<Tenant> Tenants => _tenants?.ToList();
+
 
         //--------------------------------------------------
         // Exception Error name
@@ -94,11 +115,12 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <param name="packedPermissions"></param>
         /// <param name="description"></param>
         /// <param name="roleType"></param>
-        public void Update(string packedPermissions, string description = null, RoleTypes roleType = RoleTypes.Normal)
+        public void Update(string roleName, string packedPermissions, string description = null, RoleTypes roleType = RoleTypes.Normal)
         {
             if (string.IsNullOrEmpty(packedPermissions))
                 throw new AuthPermissionsException("There should be at least one permission associated with a role.");
 
+            RoleName = roleName;
             PackedPermissionsInRole = packedPermissions;
             Description = description?.Trim() ?? Description;
             RoleType = roleType;

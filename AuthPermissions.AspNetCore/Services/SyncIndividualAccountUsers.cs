@@ -3,6 +3,7 @@
 
 using AuthPermissions.AdminCode;
 using AuthPermissions.AdminCode.Services;
+using Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,13 +16,13 @@ namespace AuthPermissions.AspNetCore.Services
     /// </summary>
     public class SyncIndividualAccountUsers : ISyncAuthenticationUsers
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="userManager"></param>
-        public SyncIndividualAccountUsers(UserManager<IdentityUser> userManager)
+        public SyncIndividualAccountUsers(UserManager<ApplicationUser> userManager)
         {
             _userManager = userManager;
         }

@@ -23,12 +23,12 @@ public class ShardingOnlyTenantAddDto
     /// <summary>
     /// Defines if the tenant should have its own database - always true
     /// </summary>
-    public bool HasOwnDb => true;
+    public bool HasOwnDb { get; set; }
 
     /// <summary>
     /// Optional: List of tenant role names 
     /// </summary>
-    public List<string> TenantRoleNames { get; set; } = new List<string>();
+    public List<int> TenantRoleIds { get; set; } = new List<int>();
 
     /// <summary>
     /// Optional: If you have multiple connections strings you should This should contains the names of the connection strings to select the correct server

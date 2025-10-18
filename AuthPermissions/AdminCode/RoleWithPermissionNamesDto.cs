@@ -12,6 +12,11 @@ namespace AuthPermissions.AdminCode
     public class RoleWithPermissionNamesDto
     {
         /// <summary>
+        /// Role Id
+        /// </summary>
+        public int RoleId { get; set; }
+
+        /// <summary>
         /// Name of the Role (unique)
         /// </summary>
         [Required(AllowEmptyStrings = false)]

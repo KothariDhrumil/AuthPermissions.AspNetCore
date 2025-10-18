@@ -5,6 +5,7 @@ using AuthPermissions.AdminCode;
 using AuthPermissions.BaseCode.CommonCode;
 using AuthPermissions.BaseCode.DataLayer.Classes;
 using AuthPermissions.BaseCode.SetupCode;
+using Domain;
 using LocalizeMessagesAndErrors;
 using Microsoft.AspNetCore.Identity;
 using StatusGeneric;
@@ -22,9 +23,9 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
 {
     private readonly IAuthUsersAdminService _authUsersAdmin;
     private readonly IDefaultLocalizer _localizeDefault;
-    private readonly SignInManager<TIdentity> _signInManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IAuthTenantAdminService _tenantAdminService;
-    private readonly UserManager<TIdentity> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     /// <summary>
     /// ctor
@@ -34,8 +35,11 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
     /// <param name="userManager"></param>
     /// <param name="signInManager"></param>
     /// <param name="localizeProvider"></param>
-    public IndividualUserAddUserManager(IAuthUsersAdminService authUsersAdmin, IAuthTenantAdminService tenantAdminService,
-        UserManager<TIdentity> userManager, SignInManager<TIdentity> signInManager, IAuthPDefaultLocalizer localizeProvider)
+    public IndividualUserAddUserManager(IAuthUsersAdminService authUsersAdmin,
+                                        IAuthTenantAdminService tenantAdminService,
+                                        UserManager<ApplicationUser> userManager,
+                                        SignInManager<ApplicationUser> signInManager,
+                                        IAuthPDefaultLocalizer localizeProvider)
     {
         _authUsersAdmin = authUsersAdmin;
         _tenantAdminService = tenantAdminService;
@@ -70,7 +74,7 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
             nameof(AddNewUserDto.Email));
 
         //Check the password matches the 
-        var passwordValidator = new PasswordValidator<TIdentity>();
+        var passwordValidator = new PasswordValidator<ApplicationUser>();
         var checkPassword = await passwordValidator.ValidateAsync(_userManager, null, newUser.Password);
         if (!checkPassword.Succeeded)
         {
@@ -104,7 +108,15 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
         var user = await _userManager.FindByEmailAsync(newUser.Email);
         if (user == null)
         {
-            user = new TIdentity { UserName = newUser.UserName, Email = newUser.Email };
+            user = new ApplicationUser
+            {
+                UserName = newUser.UserName,
+                Email = newUser.Email,
+                FirstName = newUser.FirstName,
+                LastName = newUser.LastName,
+                DesignationId = newUser.DesignationId,
+                PhoneNumber = newUser.PhoneNumber,
+            };
             var result = await _userManager.CreateAsync(user, newUser.Password);
             if (!result.Succeeded)
             {
@@ -121,15 +133,19 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
         //We have created the individual user account, so we have the user's UserId.
         //Now we create the AuthUser using the data we have been given
 
-        var tenantName = newUser.TenantId == null
+        var tenant = newUser.TenantId == null
             ? null
-            : (await _tenantAdminService.GetTenantViaIdAsync((int)newUser.TenantId)).Result?.TenantFullName;
+            : (await _tenantAdminService.GetTenantViaIdAsync((int)newUser.TenantId)).Result;
 
         if (status.HasErrors)
             return status;
 
+        newUser.Roles = newUser.TenantId == null ? null : tenant.TenantRoles.Select(x => x.RoleId).ToList();
+        
+        var tenantName = tenant?.TenantFullName;
+
         return await _authUsersAdmin.AddNewUserAsync(user.Id,
-            newUser.Email, newUser.UserName, newUser.Roles, tenantName);
+            newUser.Email, newUser.UserName, newUser.FirstName,newUser.LastName,newUser.PhoneNumber, newUser.Roles, tenantName);
     }
 
     /// <summary>
@@ -160,5 +176,25 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
     public Task<IStatusGeneric> RemoveAuthUserAsync(string userId)
     {
         return _authUsersAdmin.DeleteUserAsync(userId);
+    }
+
+    // Method to update FirstName and LastName of the user
+
+    public async Task<IStatusGeneric> UpdateUserNameAsync(string userId, string firstName, string lastName)
+    {
+        var status = new StatusGenericLocalizer(_localizeDefault);
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return status.AddErrorString("UserNotFound".ClassLocalizeKey(this, true),
+                "User not found.", nameof(userId));
+        user.FirstName = firstName;
+        user.LastName = lastName;
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            result.Errors.Select(x => x.Description).ToList().
+                ForEach(error => status.AddErrorString(this.AlreadyLocalized(), error));
+        }
+        return status;
     }
 }

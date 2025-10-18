@@ -11,6 +11,7 @@ using AuthPermissions.BaseCode.SetupCode;
 using LocalizeMessagesAndErrors;
 using Microsoft.EntityFrameworkCore;
 using StatusGeneric;
+using System.Linq;
 
 namespace AuthPermissions.AdminCode.Services
 {
@@ -45,21 +46,28 @@ namespace AuthPermissions.AdminCode.Services
         /// This can be by a user linked to a tenant and it will display all the roles that tenant can use 
         /// </summary>
         /// <param name="currentUserId">Only used if using AuthP's multi-tenant feature you must provide the current user's ID</param>
+        /// <param name="roleTypes">Role type for filter</param>
         /// <returns>query on the database</returns>
-        public IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(string currentUserId = null)
+        public IQueryable<RoleWithPermissionNamesDto> QueryRoleToPermissions(List<RoleTypes> roleTypes, string currentUserId = null)
         {
+            var roleToPermissions = _context.RoleToPermissions.AsQueryable();
+
+            if (roleTypes is not null)
+            {
+                roleToPermissions = roleToPermissions.Where(x => roleTypes.Contains(x.RoleType));
+                
+            }
+
             if (!_isMultiTenant)
-                return MapToRoleWithPermissionNamesDto(_context.RoleToPermissions);
+                return MapToRoleWithPermissionNamesDto(roleToPermissions);
 
             //multi-tenant version has to filter out the roles from users that have a tenant
             var tenantId = FindTheTenantIdOfTheUser(currentUserId);
 
             return tenantId == null
-                ? MapToRoleWithPermissionNamesDto(_context.RoleToPermissions)
-                : MapToRoleWithPermissionNamesDto(_context.RoleToPermissions
-                    .Where(x => x.RoleType == RoleTypes.Normal
-                                || (x.RoleType == RoleTypes.TenantAutoAdd || x.RoleType == RoleTypes.TenantAdminAdd)
-                                   & x.Tenants.Select(y => y.TenantId).Contains((int)tenantId)));
+                ? MapToRoleWithPermissionNamesDto(roleToPermissions)
+                : MapToRoleWithPermissionNamesDto(roleToPermissions
+                    .Where(x => (x.Tenants.Select(y => y.TenantId).Contains((int)tenantId) || x.CreatedByTenantId == tenantId)));
         }
 
         /// <summary>
@@ -69,33 +77,50 @@ namespace AuthPermissions.AdminCode.Services
         /// <param name="excludeFilteredPermissions">Optional: If set to true, then filtered permissions are also included.</param>
         /// <param name="groupName">optional: If true  it only returns permissions in a specific group</param>
         /// <returns></returns>
-        public List<PermissionDisplay> GetPermissionDisplay(bool excludeFilteredPermissions, string groupName = null)
+        public List<PermissionDisplay> GetPermissionDisplay(bool excludeFilteredPermissions, string groupName = null, int? tenantId = null)
         {
-            var allPermissions = PermissionDisplay
-                .GetPermissionsToDisplay(_permissionType, excludeFilteredPermissions);
+            if (_isMultiTenant && tenantId == null)
+            {
 
-            return groupName == null
-                ? allPermissions
-                : allPermissions.Where(x => x.GroupName == groupName).ToList();
+                var allPermissions = PermissionDisplay
+                    .GetPermissionsToDisplay(_permissionType, excludeFilteredPermissions);
+
+                return groupName == null
+                    ? allPermissions
+                    : allPermissions.Where(x => x.GroupName == groupName).ToList();
+            }
+            else
+            {
+                var userPermissions = _context.RoleToPermissions
+                    .Where(x => x.Tenants.Select(y => y.TenantId).Contains((int)tenantId))
+                    .Select(x => x.PackedPermissionsInRole.ConvertPackedPermissionToNames(_permissionType));
+
+                var existingPermission = userPermissions.Select(x => x).Distinct().ToList();
+
+                var allPermissions = PermissionDisplay
+                  .GetPermissionsToDisplay(_permissionType, excludeFilteredPermissions);
+
+                return [.. allPermissions.Where(x => x.PermissionName != null && existingPermission.Any(y => y.Contains(x.PermissionName)))];
+            }
         }
 
         /// <summary>
         /// This returns a query containing all the AuthP users that have the given role name
         /// NOTE: it assumes that the user can only look for roles that they are allowed to see
         /// </summary>
-        public IQueryable<AuthUser> QueryUsersUsingThisRole(string roleName)
+        public IQueryable<AuthUser> QueryUsersUsingThisRole(int roleId)
         {
-            return _context.AuthUsers.Where(x => x.UserRoles.Any(y => y.RoleName == roleName));
+            return _context.AuthUsers.Where(x => x.UserRoles.Any(y => y.RoleId == roleId));
         }
 
         /// <summary>
         /// This returns a query containing all the Tenants that have given role name
         /// </summary>
-        /// <param name="roleName"></param>
+        /// <param name="roleId"></param>
         /// <returns></returns>
-        public IQueryable<Tenant> QueryTenantsUsingThisRole(string roleName)
+        public IQueryable<Tenant> QueryTenantsUsingThisRole(int roleId)
         {
-            return _context.Tenants.Where(x => x.TenantRoles.Any(y => y.RoleName == roleName));
+            return _context.Tenants.Where(x => x.TenantRoles.Any(y => y.RoleId == roleId));
         }
 
 
@@ -109,34 +134,52 @@ namespace AuthPermissions.AdminCode.Services
         /// <returns>A status with any errors found</returns>
         public async Task<IStatusGeneric> CreateRoleToPermissionsAsync(string roleName,
             IEnumerable<string> permissionNames,
-            string description, RoleTypes roleType = RoleTypes.Normal)
+            string description, RoleTypes roleType = RoleTypes.Normal, int? tenantId = null)
         {
             var status = new StatusGenericLocalizer(_localizeDefault);
-            status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true), 
+
+            status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true),
                 $"Successfully added the new role {roleName}.");
 
             if (string.IsNullOrEmpty(roleName))
-                return status.AddErrorString("BadRoleName".ClassMethodLocalizeKey(this, true), 
+                return status.AddErrorString("BadRoleName".ClassMethodLocalizeKey(this, true),
                     "The RoleName isn't filled in", nameof(roleName).CamelToPascal());
-            if ((await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName)) != null)
-                return status.AddErrorFormattedWithParams("DuplicateRoleName".ClassMethodLocalizeKey(this, true),
-                    $"There is already a Role with the name of '{roleName}'.", nameof(roleName).CamelToPascal());
-            
+
+
             if (permissionNames == null)
                 return status.AddErrorString("NoPermissions".ClassLocalizeKey(this, true), //common error
-                    "You must provide at least one permission name.", 
-                    permissionNames.Select(y => y.CamelToPascal()).ToArray());
+                    "You must provide at least one permission name.",
+                    [.. permissionNames.Select(y => y.CamelToPascal())]);
+
+
+            if (roleType != RoleTypes.TenantCreated)
+            {
+                if ((await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName)) != null)
+                    return status.AddErrorFormattedWithParams("DuplicateRoleName".ClassMethodLocalizeKey(this, true),
+                        $"There is already a Role with the name of '{roleName}'.", nameof(roleName).CamelToPascal());
+            }
+            else
+            {
+                if ((await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName &&
+                                                                            x.CreatedByTenantId == tenantId)) != null)
+                    return status.AddErrorFormattedWithParams("DuplicateRoleName".ClassMethodLocalizeKey(this, true),
+                        $"There is already a Role with the name of '{roleName}'.", nameof(roleName).CamelToPascal());
+            }
 
             //NOTE: If an advanced permission (i.e. has the display attribute has AutoGenerateFilter = true) is found the roleType is updated to HiddenFromTenant
             var packedPermissions = _permissionType.PackPermissionsNamesWithValidation(permissionNames,
                 x => status.AddErrorFormattedWithParams("InvalidPermission".ClassLocalizeKey(this, true), //common error
                     $"The permission name '{x}' isn't a valid name in the {_permissionType.Name} enum.",
-                    permissionNames.Select(y => y.CamelToPascal()).ToArray()), () => roleType = RoleTypes.HiddenFromTenant);
+                    [.. permissionNames.Select(y => y.CamelToPascal())]), () => roleType = RoleTypes.HiddenFromTenant);
 
             if (status.HasErrors)
                 return status;
 
-            _context.Add(new RoleToPermissions(roleName, description, packedPermissions, roleType));
+            // When adding the role, include createdByTenantId for tenant-created roles
+            var createdByTenantId = roleType == RoleTypes.TenantCreated ? tenantId : null;
+
+            _context.Add(new RoleToPermissions(roleName, description, packedPermissions, roleType, createdByTenantId));
+
             status.CombineStatuses(await _context.SaveChangesWithChecksAsync(_localizeDefault));
 
             return status;
@@ -146,20 +189,21 @@ namespace AuthPermissions.AdminCode.Services
         /// This updates the role's permission names, and optionally its description
         /// if the new permissions contain an advanced permission
         /// </summary>
+        /// <param name="roleId">Role id</param>
         /// <param name="roleName">Name of an existing role</param>
         /// <param name="permissionNames">a collection of permission names to go into this role</param>
         /// <param name="description">Optional: If given then updates the description for this role</param>
         /// <param name="roleType">Optional: defaults to <see cref="RoleTypes.Normal"/>.
         /// NOTE: the roleType is changed to <see cref="RoleTypes.HiddenFromTenant"/> if advanced permissions are found</param>
         /// <returns>Status</returns>
-        public async Task<IStatusGeneric> UpdateRoleToPermissionsAsync(string roleName,
+        public async Task<IStatusGeneric> UpdateRoleToPermissionsAsync(int roleId, string roleName,
             IEnumerable<string> permissionNames,
             string description, RoleTypes roleType = RoleTypes.Normal)
         {
             var status = new StatusGenericLocalizer(_localizeDefault);
             status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true),
                 $"Successfully updated the role {roleName}.");
-            var existingRolePermission = await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName);
+            var existingRolePermission = await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleId == roleId);
 
             if (existingRolePermission == null)
                 return status.AddErrorFormattedWithParams("IncorrectRoleName".ClassLocalizeKey(this, true), //common error in this class
@@ -169,8 +213,8 @@ namespace AuthPermissions.AdminCode.Services
 
             var packedPermissions = _permissionType.PackPermissionsNamesWithValidation(permissionNames,
                 x => status.AddErrorFormattedWithParams("InvalidPermission".ClassLocalizeKey(this, true), //common error
-                    $"The permission name '{x}' isn't a valid name in the {_permissionType.Name} enum.", 
-                    permissionNames.Select(y => y.CamelToPascal()).ToArray()), 
+                    $"The permission name '{x}' isn't a valid name in the {_permissionType.Name} enum.",
+                    permissionNames.Select(y => y.CamelToPascal()).ToArray()),
                 () => roleType = RoleTypes.HiddenFromTenant);
 
             if (status.HasErrors)
@@ -178,7 +222,7 @@ namespace AuthPermissions.AdminCode.Services
 
             if (!packedPermissions.Any())
                 return status.AddErrorString("NoPermissions".ClassLocalizeKey(this, true), //common error 
-                    "You must provide at least one permission name.", 
+                    "You must provide at least one permission name.",
                     permissionNames.Select(y => y.CamelToPascal()).ToArray());
 
             if (originalRoleType != roleType)
@@ -186,11 +230,11 @@ namespace AuthPermissions.AdminCode.Services
                 //We need to check that the new RoleType matches where they are used
                 var roleChecker = new ChangeRoleTypeChecks(_context);
                 if (status.CombineStatuses(
-                        await roleChecker.CheckRoleTypeChangeAsync(originalRoleType, roleType,roleName, _localizeDefault)).HasErrors)
+                        await roleChecker.CheckRoleTypeChangeAsync(originalRoleType, roleType, roleName, _localizeDefault)).HasErrors)
                     return status;
             }
 
-            existingRolePermission.Update(packedPermissions, description, roleType);
+            existingRolePermission.Update(roleName, packedPermissions, description, roleType);
             status.CombineStatuses(await _context.SaveChangesWithChecksAsync(_localizeDefault));
 
             return status;
@@ -200,35 +244,37 @@ namespace AuthPermissions.AdminCode.Services
         /// This deletes a Role. If that Role is already assigned to AuthP users you must set the removeFromUsers to true
         /// otherwise you will get an error.
         /// </summary>
-        /// <param name="roleName">name of role to delete</param>
+        /// <param name="roleId">name of role to delete</param>
         /// <param name="removeFromUsers">If false it will fail if any AuthP user have that role.
         ///     If true it will delete the role from all the users that have it.</param>
+        ///     <param name="tenantId">tenantId </param>
         /// <returns>status</returns>
-        public async Task<IStatusGeneric> DeleteRoleAsync(string roleName, bool removeFromUsers)
+        public async Task<IStatusGeneric> DeleteRoleAsync(int roleId, bool removeFromUsers, int? tenantId)
         {
             var status = new StatusGenericLocalizer(_localizeDefault);
 
             var existingRolePermission =
-                await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleName == roleName);
+                await _context.RoleToPermissions.SingleOrDefaultAsync(x => x.RoleId == roleId &&
+                                                                           (!tenantId.HasValue || x.Tenants.Select(y => y.TenantId).Contains((int)tenantId)));
 
             if (existingRolePermission == null)
                 return status.AddErrorFormattedWithParams("IncorrectRoleName".ClassLocalizeKey(this, true), //common error in this class
-                    $"Could not find a role called {roleName}", nameof(roleName).CamelToPascal());
+                    $"Could not find a role called {roleId}", nameof(roleId).CamelToPascal());
 
-            var usersWithRoles = await _context.UserToRoles.Where(x => x.RoleName == roleName).ToListAsync();
+            var usersWithRoles = await _context.UserToRoles.Where(x => x.RoleId == roleId).ToListAsync();
             int tenantCount = existingRolePermission.RoleType == RoleTypes.TenantAdminAdd || existingRolePermission.RoleType == RoleTypes.TenantAutoAdd
-                ? await QueryTenantsUsingThisRole(roleName).CountAsync() : 0;
+                ? await QueryTenantsUsingThisRole(roleId).CountAsync() : 0;
             if (!removeFromUsers)
             {
                 if (usersWithRoles.Any())
                     status.AddErrorFormattedWithParams("RoleUsedUser".ClassMethodLocalizeKey(this, true),
-                        $"That role is used in {usersWithRoles.Count} AuthUsers and you didn't confirm the delete.", 
-                    nameof(roleName).CamelToPascal());
+                        $"That role is used in {usersWithRoles.Count} AuthUsers and you didn't confirm the delete.",
+                    nameof(roleId).CamelToPascal());
 
                 if (tenantCount > 0)
                     status.AddErrorFormattedWithParams("RoleUsedTenant".ClassMethodLocalizeKey(this, true),
                         $"That role is used in {usersWithRoles.Count} tenants and you didn't confirm the delete.",
-                        nameof(roleName).CamelToPascal());
+                        nameof(roleId).CamelToPascal());
 
                 if (status.HasErrors)
                     return status;
@@ -246,11 +292,11 @@ namespace AuthPermissions.AdminCode.Services
             status.CombineStatuses(await _context.SaveChangesWithChecksAsync(_localizeDefault));
 
             //build the success message
-            var successMessages = new List<FormattableString> { $"Successfully deleted the role {roleName}" };
+            var successMessages = new List<FormattableString> { $"Successfully deleted the role {roleId}" };
             var successKey = "Success";
             if (usersWithRoles.Any())
             {
-                successMessages.Add( $" and removed that role from {usersWithRoles.Count} users");
+                successMessages.Add($" and removed that role from {usersWithRoles.Count} users");
                 successKey += "-RemoveUsers";
             }
             if (tenantCount > 0)
@@ -276,6 +322,7 @@ namespace AuthPermissions.AdminCode.Services
         {
             return roleToPermissions.Select(x => new RoleWithPermissionNamesDto
             {
+                RoleId = x.RoleId,
                 RoleName = x.RoleName,
                 Description = x.Description,
                 RoleType = x.RoleType,

@@ -18,7 +18,7 @@ namespace AuthPermissions.DataLayer.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("authp")
-                .HasAnnotation("ProductVersion", "8.0.2")
+                .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -38,8 +38,17 @@ namespace AuthPermissions.DataLayer.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsDisabled")
                         .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TenantId")
                         .HasColumnType("int");
@@ -61,6 +70,126 @@ namespace AuthPermissions.DataLayer.Migrations
                         .HasFilter("[UserName] IS NOT NULL");
 
                     b.ToTable("AuthUsers", "authp");
+                });
+
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.CustomerAccount", b =>
+                {
+                    b.Property<Guid>("GlobalCustomerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<byte[]>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("ROWVERSION");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("GlobalUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("GlobalCustomerId");
+
+                    b.HasIndex("GlobalUserId")
+                        .IsUnique();
+
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique();
+
+                    b.ToTable("CustomerAccounts", "authp");
+                });
+
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.CustomerTenantLink", b =>
+                {
+                    b.Property<int>("CustomerTenantLinkId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CustomerTenantLinkId"));
+
+                    b.Property<byte[]>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("ROWVERSION");
+
+                    b.Property<Guid>("GlobalCustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CustomerTenantLinkId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("GlobalCustomerId", "TenantId")
+                        .IsUnique();
+
+                    b.ToTable("CustomerTenantLinks", "authp");
+                });
+
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.Plan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte[]>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("ROWVERSION");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("PlanRate")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlanValidityInDays")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("[Name] IS NOT NULL");
+
+                    b.ToTable("Plans", "authp");
                 });
 
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.RefreshToken", b =>
@@ -99,14 +228,19 @@ namespace AuthPermissions.DataLayer.Migrations
 
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.RoleToPermissions", b =>
                 {
-                    b.Property<string>("RoleName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("RoleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoleId"));
 
                     b.Property<byte[]>("ConcurrencyToken")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("ROWVERSION");
+
+                    b.Property<int?>("CreatedByTenantId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -115,12 +249,23 @@ namespace AuthPermissions.DataLayer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<byte>("RoleType")
                         .HasColumnType("tinyint");
 
-                    b.HasKey("RoleName");
+                    b.HasKey("RoleId");
+
+                    b.HasIndex("CreatedByTenantId");
 
                     b.HasIndex("RoleType");
+
+                    b.HasIndex("RoleName", "CreatedByTenantId")
+                        .IsUnique()
+                        .HasFilter("[CreatedByTenantId] IS NOT NULL");
 
                     b.ToTable("RoleToPermissions", "authp");
                 });
@@ -151,6 +296,93 @@ namespace AuthPermissions.DataLayer.Migrations
                         .IsUnique();
 
                     b.ToTable("ShardingEntryBackup", "authp");
+                });
+
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.SupportTicket", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte[]>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("ROWVERSION");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Headers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Method")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestBody")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResponseBody")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StatusText")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TicketStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("SupportTickets", "authp");
                 });
 
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.Tenant", b =>
@@ -200,34 +432,57 @@ namespace AuthPermissions.DataLayer.Migrations
                     b.ToTable("Tenants", "authp");
                 });
 
-            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.UserToRole", b =>
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.TenantPlan", b =>
                 {
-                    b.Property<string>("UserId")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("RoleName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<byte[]>("ConcurrencyToken")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("ROWVERSION");
 
-                    b.HasKey("UserId", "RoleName");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
-                    b.HasIndex("RoleName");
+                    b.Property<int>("PlanId")
+                        .HasColumnType("int");
 
-                    b.ToTable("UserToRoles", "authp");
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TenentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ValidTo")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("TenentId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
+                    b.HasIndex("TenentId", "IsActive");
+
+                    b.ToTable("TenantPlans", "authp");
                 });
 
-            modelBuilder.Entity("RoleToPermissionsTenant", b =>
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.UserToRole", b =>
                 {
-                    b.Property<string>("TenantRolesRoleName")
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<string>("UserId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
-                    b.Property<int>("TenantsTenantId")
+                    b.Property<int>("RoleId")
                         .HasColumnType("int");
 
                     b.Property<byte[]>("ConcurrencyToken")
@@ -235,11 +490,56 @@ namespace AuthPermissions.DataLayer.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("ROWVERSION");
 
-                    b.HasKey("TenantRolesRoleName", "TenantsTenantId");
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserToRoles", "authp");
+                });
+
+            modelBuilder.Entity("PlanToRoles", b =>
+                {
+                    b.Property<int>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PlanId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("PlanToRoles", "authp");
+                });
+
+            modelBuilder.Entity("RoleToPermissionsTenant", b =>
+                {
+                    b.Property<int>("TenantRolesRoleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantsTenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TenantRolesRoleId", "TenantsTenantId");
 
                     b.HasIndex("TenantsTenantId");
 
                     b.ToTable("RoleToPermissionsTenant", "authp");
+                });
+
+            modelBuilder.Entity("TenantPlanRoles", b =>
+                {
+                    b.Property<int>("TenantPlanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TenantPlanId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("TenantPlanRoles", "authp");
                 });
 
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.AuthUser", b =>
@@ -251,6 +551,27 @@ namespace AuthPermissions.DataLayer.Migrations
                     b.Navigation("UserTenant");
                 });
 
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.CustomerTenantLink", b =>
+                {
+                    b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.CustomerAccount", "Customer")
+                        .WithMany("TenantLinks")
+                        .HasForeignKey("GlobalCustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.RoleToPermissions", b =>
+                {
+                    b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.Tenant", "CreatedByTenant")
+                        .WithMany()
+                        .HasForeignKey("CreatedByTenantId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CreatedByTenant");
+                });
+
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.Tenant", b =>
                 {
                     b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.Tenant", "Parent")
@@ -260,11 +581,30 @@ namespace AuthPermissions.DataLayer.Migrations
                     b.Navigation("Parent");
                 });
 
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.TenantPlan", b =>
+                {
+                    b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.Plan", "Plan")
+                        .WithMany("TenantPlans")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.UserToRole", b =>
                 {
                     b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.RoleToPermissions", "Role")
                         .WithMany()
-                        .HasForeignKey("RoleName")
+                        .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -277,11 +617,26 @@ namespace AuthPermissions.DataLayer.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("PlanToRoles", b =>
+                {
+                    b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.Plan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.RoleToPermissions", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RoleToPermissionsTenant", b =>
                 {
                     b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.RoleToPermissions", null)
                         .WithMany()
-                        .HasForeignKey("TenantRolesRoleName")
+                        .HasForeignKey("TenantRolesRoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -292,9 +647,34 @@ namespace AuthPermissions.DataLayer.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TenantPlanRoles", b =>
+                {
+                    b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.RoleToPermissions", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuthPermissions.BaseCode.DataLayer.Classes.TenantPlan", null)
+                        .WithMany()
+                        .HasForeignKey("TenantPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.AuthUser", b =>
                 {
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.CustomerAccount", b =>
+                {
+                    b.Navigation("TenantLinks");
+                });
+
+            modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.Plan", b =>
+                {
+                    b.Navigation("TenantPlans");
                 });
 
             modelBuilder.Entity("AuthPermissions.BaseCode.DataLayer.Classes.Tenant", b =>

@@ -96,6 +96,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// </summary>
         public IReadOnlyCollection<RoleToPermissions> TenantRoles => _tenantRoles?.ToList();
 
+
         //--------------------------------------------------
         // Exception Error name
 
@@ -111,7 +112,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
         /// <param name="localizeDefault">localization service</param>
         /// <param name="tenantRoles">Optional: add Roles that have a <see cref="RoleTypes"/> of
         ///     <see cref="RoleTypes.TenantAutoAdd"/> or <see cref="RoleTypes.TenantAdminAdd"/></param>
-        public static IStatusGeneric<Tenant> CreateSingleTenant(string fullTenantName, 
+        public static IStatusGeneric<Tenant> CreateSingleTenant(string fullTenantName,
             IDefaultLocalizer localizeDefault, List<RoleToPermissions> tenantRoles = null)
         {
             var newInstance = new Tenant(fullTenantName, false);
@@ -195,7 +196,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             if (Children == null)
                 throw new AuthPermissionsException("The children must be loaded to rename a hierarchical tenant");
             if (newNameAtThisLevel.Contains('|'))
-                throw new AuthPermissionsBadDataException("The tenant name must not contain the character '|' because that character is used to separate the names in the hierarchical order", 
+                throw new AuthPermissionsBadDataException("The tenant name must not contain the character '|' because that character is used to separate the names in the hierarchical order",
                     nameof(newNameAtThisLevel));
 
             TenantFullName = CombineParentNameWithTenantName(newNameAtThisLevel.Trim(), Parent?.TenantFullName);
@@ -286,7 +287,7 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             status.SetResult(thisTenant);
 
             var badRoles = tenantRoles?
-                .Where(x => x.RoleType != RoleTypes.TenantAutoAdd && x.RoleType != RoleTypes.TenantAdminAdd)
+                .Where(x => x.RoleType != RoleTypes.TenantAutoAdd && x.RoleType != RoleTypes.TenantAdminAdd && x.RoleType != RoleTypes.FeatureRole && x.RoleType == RoleTypes.TenantCreated)
                 .ToList() ?? new List<RoleToPermissions>();
 
             foreach (var badRole in badRoles)
@@ -297,9 +298,9 @@ namespace AuthPermissions.BaseCode.DataLayer.Classes
             }
 
             if (status.HasErrors || tenantRoles == null)
-                return status; 
-            
-            thisTenant._tenantRoles = new HashSet<RoleToPermissions>(tenantRoles);
+                return status;
+
+            thisTenant._tenantRoles = [.. tenantRoles];
             return status;
         }
 

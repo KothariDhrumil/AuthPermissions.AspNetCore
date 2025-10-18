@@ -5,7 +5,6 @@ using AuthPermissions.BaseCode.DataLayer.Classes;
 using AuthPermissions.BaseCode.DataLayer.Classes.SupportTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace AuthPermissions.BaseCode.DataLayer.EfCode
@@ -16,6 +15,16 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
     public class AuthPermissionsDbContext : DbContext
     {
         private readonly ICustomConfiguration _customConfiguration;
+
+        /// <summary>
+        /// The list of central customer accounts
+        /// </summary>
+        public DbSet<CustomerAccount> CustomerAccounts { get; set; }
+
+        /// <summary>
+        /// Links customer accounts to tenants
+        /// </summary>
+        public DbSet<CustomerTenantLink> CustomerTenantLinks { get; set; }
 
         /// <summary>
         /// ctor
@@ -84,7 +93,11 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
         /// </summary>
         public DbSet<ShardingEntry> ShardingEntryBackup { get; set; }
 
+        public DbSet<Plan> Plans { get; set; }
 
+        public DbSet<TenantPlan> TenantPlans { get; set; }
+
+        public DbSet<SupportTicket> SupportTickets { get; set; }
         /// <summary>
         /// Set up AuthP's setup
         /// </summary>
@@ -92,7 +105,7 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("authp");
-            
+
             //Add concurrency token to every entity 
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
             {
@@ -107,8 +120,6 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                 }
                 else if (Database.IsNpgsql())
                 {
-                    //see https://www.npgsql.org/efcore/modeling/concurrency.html
-                    //and https://github.com/npgsql/efcore.pg/issues/19#issuecomment-253346255
                     entityType.AddProperty("xmin", typeof(uint))
                         .SetColumnType("xid");
                     entityType.FindProperty("xmin")
@@ -139,8 +150,23 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
             modelBuilder.Entity<RoleToPermissions>()
                 .HasIndex(x => x.RoleType);
 
+            modelBuilder.Entity<RoleToPermissions>()
+                .HasKey(x => x.RoleId);
+
+            // Who created the role (optional FK to Tenant)
+            modelBuilder.Entity<RoleToPermissions>()
+                .HasOne(x => x.CreatedByTenant)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByTenantId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Unique role name per creator-tenant (global roles have CreatedByTenantId = null)
+            modelBuilder.Entity<RoleToPermissions>()
+                .HasIndex(x => new { x.RoleName, x.CreatedByTenantId })
+                .IsUnique();
+
             modelBuilder.Entity<UserToRole>()
-                .HasKey(x => new { x.UserId, x.RoleName });
+                .HasKey(x => new { x.UserId, x.RoleId });
 
             modelBuilder.Entity<Tenant>().HasKey(x => x.TenantId);
             modelBuilder.Entity<Tenant>()
@@ -151,6 +177,7 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                 .IsUnicode(false);
             modelBuilder.Entity<Tenant>()
                 .HasIndex(x => x.ParentDataKey);
+
             modelBuilder.Entity<Tenant>()
                 .HasMany(x => x.TenantRoles)
                 .WithMany(x => x.Tenants);
@@ -174,6 +201,156 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
             modelBuilder.Entity<ShardingEntry>()
                 .HasIndex(x => x.Name)
                 .IsUnique();
+
+            modelBuilder.Entity<Plan>()
+                .HasIndex(x => x.Name)
+                .IsUnique();
+            modelBuilder.Entity<Plan>()
+                .HasKey(x => x.Id);
+
+
+            modelBuilder.Entity<TenantPlan>()
+                .HasIndex(x => new { x.TenentId, x.IsActive });
+            modelBuilder.Entity<TenantPlan>()
+                .HasKey(x => x.Id);
+
+
+            // Plan <-> RoleToPermissions (many-to-many via join table authp.PlanToRoles)
+            modelBuilder.Entity<Plan>()
+                .HasMany(p => p.Roles)
+                .WithMany() // no navigation on RoleToPermissions needed
+                .UsingEntity<Dictionary<string, object>>(
+                    "PlanToRoles",
+                    j => j
+                        .HasOne<RoleToPermissions>()
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .HasPrincipalKey(r => r.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j => j
+                        .HasOne<Plan>()
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .HasPrincipalKey(p => p.Id)
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.ToTable("PlanToRoles", "authp");
+                        j.HasKey("PlanId", "RoleId");
+                        j.HasIndex("RoleId");
+                    });
+
+            // TenantPlans (many plans can be assigned to one tenant; only one active at a time)
+            modelBuilder.Entity<TenantPlan>()
+                .HasKey(x => x.Id);
+
+            modelBuilder.Entity<TenantPlan>()
+                .HasOne(tp => tp.Tenant)
+                .WithMany() // optional: add ICollection<TenantPlan> to Tenant if you need reverse nav
+                .HasForeignKey(tp => tp.TenentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TenantPlan>()
+                .HasOne(tp => tp.Plan)
+                .WithMany(p => p.TenantPlans)
+                .HasForeignKey(tp => tp.PlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Helpful non-unique indexes
+            modelBuilder.Entity<TenantPlan>()
+                .HasIndex(tp => tp.TenentId);
+            modelBuilder.Entity<TenantPlan>()
+                .HasIndex(tp => tp.PlanId);
+
+            // Unique filtered index: only one active plan per tenant
+            if (Database.IsSqlServer())
+            {
+                modelBuilder.Entity<TenantPlan>()
+                    .HasIndex(tp => tp.TenentId)
+                    .IsUnique()
+                    .HasFilter("[IsActive] = 1");
+            }
+            else if (Database.IsNpgsql())
+            {
+                modelBuilder.Entity<TenantPlan>()
+                    .HasIndex(tp => tp.TenentId)
+                    .IsUnique()
+                    .HasFilter("\"IsActive\" = true");
+            }
+            else
+            {
+                // Callback (no filtering support): keep existing composite index for performance
+                modelBuilder.Entity<TenantPlan>()
+                    .HasIndex(x => new { x.TenentId, x.IsActive });
+            }
+
+            // TenantPlan <-> RoleToPermissions (many-to-many via join table authp.TenantPlanRoles)
+            modelBuilder.Entity<TenantPlan>()
+                .HasMany(tp => tp.Roles)
+                .WithMany() // no navigation on RoleToPermissions needed
+                .UsingEntity<Dictionary<string, object>>(
+                    "TenantPlanRoles",
+                    j => j
+                        .HasOne<RoleToPermissions>()
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .HasPrincipalKey(r => r.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j => j
+                        .HasOne<TenantPlan>()
+                        .WithMany()
+                        .HasForeignKey("TenantPlanId")
+                        .HasPrincipalKey(tp => tp.Id)
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.ToTable("TenantPlanRoles", "authp");
+                        j.HasKey("TenantPlanId", "RoleId");
+                        j.HasIndex("RoleId");
+                    });
+
+            // Customers
+            modelBuilder.Entity<CustomerAccount>()
+                .HasKey(x => x.GlobalCustomerId); 
+
+            modelBuilder.Entity<CustomerAccount>()
+                .Property(x=>x.GlobalCustomerId)
+                .HasDefaultValueSql("NEWSEQUENTIALID()"); 
+
+            modelBuilder.Entity<CustomerAccount>()
+                .HasIndex(x => x.GlobalUserId)
+                .IsUnique();
+            modelBuilder.Entity<CustomerAccount>()
+                .HasIndex(x => x.PhoneNumber)
+                .IsUnique();
+
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasKey(x => x.CustomerTenantLinkId);
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasIndex(x => new { x.GlobalCustomerId, x.TenantId })
+                .IsUnique();
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasIndex(x => x.TenantId);
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasOne(x => x.Customer)
+                .WithMany(x => x.TenantLinks)
+                .HasForeignKey(x => x.GlobalCustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SupportTicket>(b =>
+            {
+                b.ToTable("SupportTickets", "authp");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Message).IsRequired();
+                b.Property(x => x.Url).HasMaxLength(2048);
+                b.Property(x => x.Method).HasMaxLength(16);
+                b.Property(x => x.StatusText).HasMaxLength(256);
+                b.Property(x => x.UserAgent).HasMaxLength(1024);
+                b.Property(x => x.CorrelationId).HasMaxLength(128);
+                b.HasIndex(x => x.CorrelationId);
+                b.HasIndex(x => x.CreatedAt);
+                b.HasIndex(x => x.TenantId);
+            });
         }
     }
 }

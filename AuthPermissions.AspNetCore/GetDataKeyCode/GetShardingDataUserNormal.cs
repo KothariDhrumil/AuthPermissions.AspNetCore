@@ -23,7 +23,7 @@ namespace AuthPermissions.AspNetCore.GetDataKeyCode
         public GetShardingDataUserNormal(IHttpContextAccessor accessor, IGetSetShardingEntries connectionService)
         {
             DataKey = accessor.HttpContext?.User.GetAuthDataKeyFromUser();
-            var databaseDataName = accessor.HttpContext?.User.GetDatabaseInfoNameFromUser();
+            var databaseDataName = accessor.HttpContext?.User.GetDatabaseInfoName();
             if (databaseDataName != null)
                 ConnectionString = connectionService.FormConnectionString(databaseDataName);
         }
