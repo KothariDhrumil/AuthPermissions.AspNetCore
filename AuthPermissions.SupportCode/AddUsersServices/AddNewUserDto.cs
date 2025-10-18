@@ -97,5 +97,6 @@ public class AddNewUserDto
     /// </summary>
     public string PhoneNumber { get; set; }
 
+    public int UserTypeId { get; set; }
 
 }
