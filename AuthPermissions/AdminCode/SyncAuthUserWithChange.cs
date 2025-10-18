@@ -43,6 +43,7 @@ namespace AuthPermissions.AdminCode
 
                 RoleIds = authUser.UserRoles.Select(x => x.Role.RoleId).ToList();
                 TenantName = authUser.UserTenant?.TenantFullName;
+                
             }
 
             if (authenticationUser != null)

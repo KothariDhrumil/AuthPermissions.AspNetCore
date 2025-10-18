@@ -35,8 +35,11 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
     /// <param name="userManager"></param>
     /// <param name="signInManager"></param>
     /// <param name="localizeProvider"></param>
-    public IndividualUserAddUserManager(IAuthUsersAdminService authUsersAdmin, IAuthTenantAdminService tenantAdminService,
-        UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IAuthPDefaultLocalizer localizeProvider)
+    public IndividualUserAddUserManager(IAuthUsersAdminService authUsersAdmin,
+                                        IAuthTenantAdminService tenantAdminService,
+                                        UserManager<ApplicationUser> userManager,
+                                        SignInManager<ApplicationUser> signInManager,
+                                        IAuthPDefaultLocalizer localizeProvider)
     {
         _authUsersAdmin = authUsersAdmin;
         _tenantAdminService = tenantAdminService;
@@ -137,11 +140,12 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
         if (status.HasErrors)
             return status;
 
-        newUser.Roles = tenant.TenantRoles.Select(x=>x.RoleId).ToList();
-        var tenantName = tenant.TenantFullName;
+        newUser.Roles = newUser.TenantId == null ? null : tenant.TenantRoles.Select(x => x.RoleId).ToList();
+        
+        var tenantName = tenant?.TenantFullName;
 
         return await _authUsersAdmin.AddNewUserAsync(user.Id,
-            newUser.Email, newUser.UserName, newUser.Roles, tenantName);
+            newUser.Email, newUser.UserName, newUser.FirstName,newUser.LastName,newUser.PhoneNumber, newUser.Roles, tenantName);
     }
 
     /// <summary>
@@ -172,5 +176,25 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
     public Task<IStatusGeneric> RemoveAuthUserAsync(string userId)
     {
         return _authUsersAdmin.DeleteUserAsync(userId);
+    }
+
+    // Method to update FirstName and LastName of the user
+
+    public async Task<IStatusGeneric> UpdateUserNameAsync(string userId, string firstName, string lastName)
+    {
+        var status = new StatusGenericLocalizer(_localizeDefault);
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return status.AddErrorString("UserNotFound".ClassLocalizeKey(this, true),
+                "User not found.", nameof(userId));
+        user.FirstName = firstName;
+        user.LastName = lastName;
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            result.Errors.Select(x => x.Description).ToList().
+                ForEach(error => status.AddErrorString(this.AlreadyLocalized(), error));
+        }
+        return status;
     }
 }

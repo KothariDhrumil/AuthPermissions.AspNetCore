@@ -23,6 +23,10 @@ namespace ExamplesCommonCode.CommonAdmin
         public bool HasTenant => TenantName != null;
         public string TenantName { get; private set; }
 
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string PhoneNumber { get; set; }
+
         public static IQueryable<AuthUserDisplay> TurnIntoDisplayFormat(IQueryable<AuthUser> inQuery)
         {
             return inQuery.Select(x => new AuthUserDisplay
@@ -30,8 +34,11 @@ namespace ExamplesCommonCode.CommonAdmin
                 UserName = x.UserName,
                 Email = x.Email,
                 UserId = x.UserId,
-                RoleNames = x.UserRoles.Select(y => y.Role.RoleName).ToArray(),
-                TenantName = x.UserTenant.TenantFullName
+                RoleNames = x.UserRoles.Where(x=>x.Role.RoleType != RoleTypes.FeatureRole).Select(y => y.Role.RoleName).ToArray(),
+                TenantName = x.UserTenant.TenantFullName,
+                FirstName = x.FirstName,
+                LastName = x.LastName,
+                PhoneNumber = x.PhoneNumber,
             });
         }
 
@@ -43,6 +50,9 @@ namespace ExamplesCommonCode.CommonAdmin
                 Email = authUser.Email,
                 UserId = authUser.UserId,
                 TenantName = authUser.UserTenant?.TenantFullName,
+                FirstName = authUser.FirstName,
+                LastName = authUser.LastName,
+                PhoneNumber = authUser.PhoneNumber,
 
             };
             if (authUser.UserRoles != null)

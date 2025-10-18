@@ -17,6 +17,16 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
         private readonly ICustomConfiguration _customConfiguration;
 
         /// <summary>
+        /// The list of central customer accounts
+        /// </summary>
+        public DbSet<CustomerAccount> CustomerAccounts { get; set; }
+
+        /// <summary>
+        /// Links customer accounts to tenants
+        /// </summary>
+        public DbSet<CustomerTenantLink> CustomerTenantLinks { get; set; }
+
+        /// <summary>
         /// ctor
         /// </summary>
         /// <param name="options"></param>
@@ -87,6 +97,7 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
 
         public DbSet<TenantPlan> TenantPlans { get; set; }
 
+        public DbSet<SupportTicket> SupportTickets { get; set; }
         /// <summary>
         /// Set up AuthP's setup
         /// </summary>
@@ -109,8 +120,6 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                 }
                 else if (Database.IsNpgsql())
                 {
-                    //see https://www.npgsql.org/efcore/modeling/concurrency.html
-                    //and https://github.com/npgsql/efcore.pg/issues/19#issuecomment-253346255
                     entityType.AddProperty("xmin", typeof(uint))
                         .SetColumnType("xid");
                     entityType.FindProperty("xmin")
@@ -299,6 +308,49 @@ namespace AuthPermissions.BaseCode.DataLayer.EfCode
                         j.HasKey("TenantPlanId", "RoleId");
                         j.HasIndex("RoleId");
                     });
+
+            // Customers
+            modelBuilder.Entity<CustomerAccount>()
+                .HasKey(x => x.GlobalCustomerId); 
+
+            modelBuilder.Entity<CustomerAccount>()
+                .Property(x=>x.GlobalCustomerId)
+                .HasDefaultValueSql("NEWSEQUENTIALID()"); 
+
+            modelBuilder.Entity<CustomerAccount>()
+                .HasIndex(x => x.GlobalUserId)
+                .IsUnique();
+            modelBuilder.Entity<CustomerAccount>()
+                .HasIndex(x => x.PhoneNumber)
+                .IsUnique();
+
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasKey(x => x.CustomerTenantLinkId);
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasIndex(x => new { x.GlobalCustomerId, x.TenantId })
+                .IsUnique();
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasIndex(x => x.TenantId);
+            modelBuilder.Entity<CustomerTenantLink>()
+                .HasOne(x => x.Customer)
+                .WithMany(x => x.TenantLinks)
+                .HasForeignKey(x => x.GlobalCustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SupportTicket>(b =>
+            {
+                b.ToTable("SupportTickets", "authp");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Message).IsRequired();
+                b.Property(x => x.Url).HasMaxLength(2048);
+                b.Property(x => x.Method).HasMaxLength(16);
+                b.Property(x => x.StatusText).HasMaxLength(256);
+                b.Property(x => x.UserAgent).HasMaxLength(1024);
+                b.Property(x => x.CorrelationId).HasMaxLength(128);
+                b.HasIndex(x => x.CorrelationId);
+                b.HasIndex(x => x.CreatedAt);
+                b.HasIndex(x => x.TenantId);
+            });
         }
     }
 }

@@ -116,7 +116,7 @@ namespace AuthPermissions.BulkLoadServices.Concrete
                         $"The user {userName} has a tenant name of {userDefine.TenantNameForDataKey} which wasn't found in the auth database."));
             }
 
-            var authUserStatus = AuthUser.CreateAuthUser(userId, userDefine.Email, userName, rolesToPermissions, 
+            var authUserStatus = AuthUser.CreateAuthUser(userId, userDefine.Email, userName, userDefine.FirstName,userDefine.LastName, userDefine.PhoneNumber, rolesToPermissions, 
                 new StubDefaultLocalizer(), userTenant);
             if (status.CombineStatuses(authUserStatus).HasErrors)
                 return status;

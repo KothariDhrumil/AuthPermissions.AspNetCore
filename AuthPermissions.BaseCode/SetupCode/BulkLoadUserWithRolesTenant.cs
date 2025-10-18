@@ -20,7 +20,7 @@ public class BulkLoadUserWithRolesTenant
     /// <param name="userId">If null, then you must register a <see cref="IFindUserInfoService"/> to provide a lookup of the UserId</param>
     /// <param name="uniqueUserName">A string that is unique for each user, e.g. email. If not provided then uses the userName</param>
     /// <param name="tenantNameForDataKey">Optional: The unique name of your multi-tenant that this user is linked to</param>
-    public BulkLoadUserWithRolesTenant(string email, string userName, string roleNamesCommaDelimited,
+    public BulkLoadUserWithRolesTenant(string email, string userName, string roleNamesCommaDelimited, string firstName, string lastName, string phoneNumber,
         string userId = null,
         string uniqueUserName = null, string tenantNameForDataKey = null)
     {
@@ -31,6 +31,9 @@ public class BulkLoadUserWithRolesTenant
                                   throw new ArgumentNullException(nameof(roleNamesCommaDelimited));
         UniqueUserName = uniqueUserName ?? UserName;
         TenantNameForDataKey = tenantNameForDataKey;
+        FirstName = firstName;
+        LastName = lastName;
+        PhoneNumber = phoneNumber;
     }
 
     /// <summary>
@@ -64,7 +67,12 @@ public class BulkLoadUserWithRolesTenant
     /// <summary>
     /// List of role names in a comma delimited list
     /// </summary>
-    public string RoleNamesCommaDelimited { get;  }
+    public string RoleNamesCommaDelimited { get; }
+
+
+    public string FirstName { get; }
+    public string LastName { get; }
+    public string PhoneNumber { get; }
 
     /// <summary>
     /// Useful when debugging

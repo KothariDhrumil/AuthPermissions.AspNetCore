@@ -55,14 +55,12 @@ namespace AuthPermissions
             if (userWithTenant == null || userWithTenant.IsDisabled)
                 return result;
 
-            var permissions = await CalcPermissionsForUserAsync(userId);
+            var permissions = await CalcPermissionsForUserAsync(userId, userWithTenant.UserTenant);
             //var permissionList= permissions?.ConvertPackedPermissionToNames(_options.InternalData.EnumPermissionsType);
 
             if (permissions != null)
                 result.Add(new Claim(PermissionConstants.PackedPermissionClaimType, permissions));
-             
-            
-                       
+
             if (_options.TenantType.IsMultiTenant())
                 result.AddRange(GetMultiTenantClaims(userWithTenant.UserTenant));
 
@@ -72,6 +70,7 @@ namespace AuthPermissions
                 if (extraClaim != null)
                     result.Add(extraClaim);
             }
+            result.Add(new Claim(PermissionConstants.LoggedInUserRole, PermissionConstants.TenantRole));
 
             return result;
         }
@@ -85,7 +84,7 @@ namespace AuthPermissions
         /// </summary>
         /// <param name="userId"></param>
         /// <returns>a string containing the packed permissions, or null if no permissions</returns>
-        private async Task<string> CalcPermissionsForUserAsync(string userId)
+        private async Task<string> CalcPermissionsForUserAsync(string userId, Tenant userTeant)
         {
             //This gets all the permissions, with a distinct to remove duplicates
             var permissionsForAllRoles = await _context.UserToRoles
@@ -96,23 +95,47 @@ namespace AuthPermissions
             if (_options.TenantType.IsMultiTenant())
             {
                 //We need to add any RoleTypes.TenantAutoAdd for a tenant user
-
-                var autoAddPermissions = await _context.AuthUsers
+                var userTenantPermissions = _context.AuthUsers
                     .Where(x => x.UserId == userId && x.TenantId != null)
-                    .SelectMany(x => x.UserTenant.TenantRoles
-                        .Where(y => y.RoleType == RoleTypes.TenantAutoAdd)
-                        .Select(z => z.PackedPermissionsInRole))
-                    .ToListAsync();
+                    .SelectMany(x => x.UserTenant.TenantRoles).ToList();
 
-                if (autoAddPermissions.Any())
+                if (permissionsForAllRoles.Count == 0)
+                {
+                    permissionsForAllRoles.AddRange(userTenantPermissions.Select(x => x.PackedPermissionsInRole));
+                }
+                
+                var autoAddPermissions = userTenantPermissions
+                    .Where(y => y.RoleType == RoleTypes.TenantAutoAdd)
+                    .Select(z => z.PackedPermissionsInRole).ToList();
+
+                
+                if (autoAddPermissions.Count != 0)
                     permissionsForAllRoles.AddRange(autoAddPermissions);
+
+                // first level permissions are tenant level permissions ( in userTenantPermissions)
+                // so if permissionsforallroles contains the permission which are not part of userTenantPermissions then we should exclude it
+                if (userTeant is not null)
+                {
+                    List<string> permissionToBeRemoved = [];
+                  
+                    var tenantPermissions = userTenantPermissions.Select(x => x.PackedPermissionsInRole).ToHashSet();
+
+                    foreach (var permissions in permissionsForAllRoles)
+                    {
+                        if (!tenantPermissions.Contains(permissions))
+                        {
+                            permissionToBeRemoved.Add(permissions);
+                        }
+                    }
+                    permissionsForAllRoles.RemoveAll(permissionToBeRemoved.Contains);
+                }
             }
 
             if (!permissionsForAllRoles.Any())
                 return null;
 
             //thanks to https://stackoverflow.com/questions/5141863/how-to-get-distinct-characters
-            var packedPermissionsForUser = new string(string.Concat(permissionsForAllRoles).Distinct().ToArray());
+            var packedPermissionsForUser = new string([.. string.Concat(permissionsForAllRoles).Distinct()]);
 
             return packedPermissionsForUser;
         }

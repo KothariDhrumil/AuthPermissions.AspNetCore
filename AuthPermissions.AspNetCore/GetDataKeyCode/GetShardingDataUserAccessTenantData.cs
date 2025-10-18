@@ -32,7 +32,7 @@ namespace AuthPermissions.AspNetCore.GetDataKeyCode
             DataKey = accessor.HttpContext?.User.GetAuthDataKeyFromUser()
                       ?? overrideLink.dataKey;
 
-            var databaseDataName = accessor.HttpContext?.User.GetDatabaseInfoNameFromUser()
+            var databaseDataName = accessor.HttpContext?.User.GetDatabaseInfoName()
                                    ?? overrideLink.connectionName;
 
             if (databaseDataName != null)

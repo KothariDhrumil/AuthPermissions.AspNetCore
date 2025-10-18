@@ -94,7 +94,7 @@ public class AzureAdNewUserManager : IAddNewUserManager
             : (await _tenantAdminService.GetTenantViaIdAsync((int)UserLoginData.TenantId)).Result?.TenantFullName;
 
         return await _authUsersAdmin.AddNewUserAsync(azureUserStatus.Result,
-            UserLoginData.Email, UserLoginData.UserName, UserLoginData.Roles, tenantName);
+            UserLoginData.Email, UserLoginData.UserName, UserLoginData.FirstName, UserLoginData.LastName, UserLoginData.PhoneNumber, UserLoginData.Roles, tenantName);
     }
 
 
@@ -171,5 +171,10 @@ public class AzureAdNewUserManager : IAddNewUserManager
         }
 
         throw new AuthPermissionsException($"Could not {string.Join(" or ", approaches)} the Azure AD user.");
+    }
+
+    public Task<IStatusGeneric> UpdateUserNameAsync(string userId, string firstName, string lastName)
+    {
+        throw new NotImplementedException();
     }
 }

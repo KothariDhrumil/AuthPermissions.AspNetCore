@@ -4,6 +4,7 @@ using AuthPermissions.BaseCode.DataLayer.EfCode;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthPermissions.DataLayer.Migrations
 {
     [DbContext(typeof(AuthPermissionsDbContext))]
-    partial class AuthPermissionsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251005143102_AddSupportTickets")]
+    partial class AddSupportTickets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -38,17 +41,8 @@ namespace AuthPermissions.DataLayer.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("FirstName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsDisabled")
                         .HasColumnType("bit");
-
-                    b.Property<string>("LastName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TenantId")
                         .HasColumnType("int");
@@ -344,7 +338,10 @@ namespace AuthPermissions.DataLayer.Migrations
                     b.Property<string>("ResponseBody")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("StatusCode")
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<string>("StatusText")
@@ -352,9 +349,6 @@ namespace AuthPermissions.DataLayer.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<int?>("TenantId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TicketStatus")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Timestamp")
