@@ -1,1 +1,0 @@
-{"Cache":{"ShardingEntry-Default Database":"{\"Name\":\"Default Database\",\"DatabaseName\":null,\"ConnectionName\":\"DefaultConnection\",\"DatabaseType\":\"SqlServer\"}","ShardingEntry-DhrumilSharding":"{\"Name\":\"DhrumilSharding\",\"DatabaseName\":\"DhrumilSharding\",\"ConnectionName\":\"DhrumilCoastServer\",\"DatabaseType\":\"SqlServer\"}"},"TimeOuts":{}}

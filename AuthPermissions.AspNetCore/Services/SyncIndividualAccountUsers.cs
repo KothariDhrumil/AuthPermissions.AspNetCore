@@ -3,7 +3,7 @@
 
 using AuthPermissions.AdminCode;
 using AuthPermissions.AdminCode.Services;
-using Domain;
+using AuthPermissions.BaseCode.DataLayer.Classes;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

@@ -3,7 +3,6 @@
 
 using AuthPermissions.AdminCode;
 using AuthPermissions.Factories;
-using Example4.ShopCode.EfCoreCode;
 using Microsoft.Extensions.Logging;
 using TestSupport.EfHelpers;
 
