@@ -41,4 +41,3 @@ public class CustomerAccount
 
     public ICollection<CustomerTenantLink> TenantLinks { get; set; } = new List<CustomerTenantLink>();
 }
-

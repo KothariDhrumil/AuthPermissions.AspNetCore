@@ -5,7 +5,6 @@ using AuthPermissions.AdminCode;
 using AuthPermissions.BaseCode.CommonCode;
 using AuthPermissions.BaseCode.DataLayer.Classes;
 using AuthPermissions.BaseCode.SetupCode;
-using Domain;
 using LocalizeMessagesAndErrors;
 using Microsoft.AspNetCore.Identity;
 using StatusGeneric;
@@ -114,7 +113,6 @@ public class IndividualUserAddUserManager<TIdentity> : IAddNewUserManager
                 Email = newUser.Email,
                 FirstName = newUser.FirstName,
                 LastName = newUser.LastName,
-                DesignationId = newUser.DesignationId,
                 PhoneNumber = newUser.PhoneNumber,
             };
             var result = await _userManager.CreateAsync(user, newUser.Password);

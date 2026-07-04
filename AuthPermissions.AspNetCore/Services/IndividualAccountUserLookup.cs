@@ -1,9 +1,9 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
+using AuthPermissions.BaseCode.DataLayer.Classes;
 using AuthPermissions.BaseCode.SetupCode;
 using AuthPermissions.BulkLoadServices.Concrete;
-using Domain;
 using Microsoft.AspNetCore.Identity;
 
 namespace AuthPermissions.AspNetCore.Services

@@ -4,7 +4,7 @@
   <!-- See documentation for all the possible values -->
   <metadata>
     <id>AuthPermissions.AspNetCore</id>
-    <version>9.0.0</version>
+    <version>9.0.4</version>
     <authors>Jon P Smith</authors>
     <product>AuthPermissions.AspNetCore</product>
     <copyright>Copyright (c) 2021 Jon P Smith</copyright>
@@ -22,6 +22,6 @@
     <!-- This is used to find projects with names starting with this. If null then uses NuGet id -->
     <NamespacePrefix>AuthPermissions</NamespacePrefix>
     <!-- worth filling in with your local NuGet Package Source folder. See docs about using {USERPROFILE} in string -->
-    <CopyNuGetTo>{USERPROFILE}\LocalNuGet</CopyNuGetTo>
+    <CopyNuGetTo>D:\tfs\DealersAndDistributors\Library\PublishedDLL</CopyNuGetTo> 
   </toolSettings>
 </allsettings>
