@@ -10,6 +10,7 @@ using AuthPermissions.BaseCode.DataLayer.Classes.SupportTypes;
 using AuthPermissions.BaseCode.DataLayer.EfCode;
 using AuthPermissions.BaseCode.PermissionsCode;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AuthPermissions
 {
@@ -20,6 +21,7 @@ namespace AuthPermissions
     public class ClaimsCalculator : IClaimsCalculator
     {
         private readonly IEnumerable<IClaimsAdder> _claimsAdders;
+        private readonly ILogger<ClaimsCalculator> logger;
         private readonly AuthPermissionsDbContext _context;
         private readonly AuthPermissionsOptions _options;
 
@@ -29,13 +31,16 @@ namespace AuthPermissions
         /// <param name="context"></param>
         /// <param name="options"></param>
         /// <param name="claimAdders"></param>
+        /// <param name="logger"></param>
         public ClaimsCalculator(AuthPermissionsDbContext context,
             AuthPermissionsOptions options,
-                IEnumerable<IClaimsAdder> claimAdders)
+                IEnumerable<IClaimsAdder> claimAdders,
+                ILogger<ClaimsCalculator> logger)
         {
             _context = context;
             _options = options;
             _claimsAdders = claimAdders;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -103,31 +108,45 @@ namespace AuthPermissions
                 {
                     permissionsForAllRoles.AddRange(userTenantPermissions.Select(x => x.PackedPermissionsInRole));
                 }
-                
+
+                // log packed permissions (deduplicated chars) before auto-add
+                var packedBefore = new string([.. string.Concat(permissionsForAllRoles).Distinct()]);
+                logger.LogInformation("Permissions before auto-add: {Permissions}",
+                    packedBefore.ConvertPackedPermissionToNames(_options.InternalData.EnumPermissionsType));
+
                 var autoAddPermissions = userTenantPermissions
                     .Where(y => y.RoleType == RoleTypes.TenantAutoAdd)
                     .Select(z => z.PackedPermissionsInRole).ToList();
 
-                
                 if (autoAddPermissions.Count != 0)
                     permissionsForAllRoles.AddRange(autoAddPermissions);
+
+                // log packed permissions after auto-add
+                var packedAfter = string.Concat(permissionsForAllRoles);
+                logger.LogInformation("Permissions after auto-add: {Permissions}",
+                    packedAfter.ConvertPackedPermissionToNames(_options.InternalData.EnumPermissionsType));
+
 
                 // first level permissions are tenant level permissions ( in userTenantPermissions)
                 // so if permissionsforallroles contains the permission which are not part of userTenantPermissions then we should exclude it
                 if (userTeant is not null)
                 {
-                    List<string> permissionToBeRemoved = [];
-                  
-                    var tenantPermissions = userTenantPermissions.Select(x => x.PackedPermissionsInRole).ToHashSet();
+                    // Build a set of individual permission chars allowed by the tenant's roles
+                    HashSet<char> tenantPermissionChars = [.. string.Concat(
+                        userTenantPermissions.Select(x => x.PackedPermissionsInRole))];
 
-                    foreach (var permissions in permissionsForAllRoles)
-                    {
-                        if (!tenantPermissions.Contains(permissions))
-                        {
-                            permissionToBeRemoved.Add(permissions);
-                        }
-                    }
-                    permissionsForAllRoles.RemoveAll(permissionToBeRemoved.Contains);
+                    // log tenant permissions in readable format
+                    var tenantPermissionsInfo = new string([.. tenantPermissionChars]);
+                    logger.LogInformation("Permissions for tenant {TenantId}: {Permissions}",
+                        userTeant.TenantId,
+                        tenantPermissionsInfo.ConvertPackedPermissionToNames(_options.InternalData.EnumPermissionsType));
+
+                    // Filter each packed role string to only chars present in tenant's allowed set,
+                    // then drop any role string that becomes empty after filtering
+                    permissionsForAllRoles = permissionsForAllRoles
+                        .Select(p => new string([.. p.Where(c => tenantPermissionChars.Contains(c))]))
+                        .Where(p => p.Length > 0)
+                        .ToList();
                 }
             }
 

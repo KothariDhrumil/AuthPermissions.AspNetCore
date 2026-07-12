@@ -177,7 +177,7 @@ namespace AuthPermissions.AdminCode.Services
             await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
-                var tenantRolesStatus = await GetRolesWithChecksAsync(tenantRoleIds);
+                var tenantRolesStatus = await GetRolesWithChecksAsync(tenantRoleIds, isTenantAdmin:true);
                 status.CombineStatuses(tenantRolesStatus);
                 var newTenantStatus = Tenant.CreateSingleTenant(tenantName, _localizeDefault, tenantRolesStatus.Result);
                 status.SetResult(newTenantStatus.Result);
@@ -272,7 +272,7 @@ namespace AuthPermissions.AdminCode.Services
                 status.SetMessageFormatted("Success".ClassMethodLocalizeKey(this, true),
                     $"Successfully added the new hierarchical tenant {fullTenantName}.");
 
-                var tenantRolesStatus = await GetRolesWithChecksAsync(tenantRoleIds);
+                var tenantRolesStatus = await GetRolesWithChecksAsync(tenantRoleIds, isTenantAdmin: true);
                 status.CombineStatuses(tenantRolesStatus);
                 var newTenantStatus = Tenant.CreateHierarchicalTenant(fullTenantName, parentTenant, _localizeDefault, tenantRolesStatus.Result);
                 status.SetResult(newTenantStatus.Result);
@@ -398,7 +398,7 @@ namespace AuthPermissions.AdminCode.Services
                     .Single(x => x.TenantId == tenantId);
                 var updateStatus = tenant.UpdateTenantRoles(tenantRolesStatus.Result, _localizeDefault);
 
-                status.CombineStatuses(updateStatus);                            
+                status.CombineStatuses(updateStatus);
             }
             if (status.CombineStatuses(tenantRolesStatus).HasErrors)
                 return status;
@@ -777,9 +777,10 @@ namespace AuthPermissions.AdminCode.Services
         /// NOTE: The Tenant checks that the role's <see cref="RoleToPermissions.RoleType"/> are valid for a tenant
         /// </summary>
         /// <param name="tenantRoleIds">List of role name. Can be null, which means no roles to add</param>
+        /// <param name="isTenantAdmin">If true, then it will return the TenantAdminAdd role if no roles are found</param>
         /// <returns>Status</returns>
         public async Task<IStatusGeneric<List<RoleToPermissions>>> GetRolesWithChecksAsync(
-            List<int> tenantRoleIds)
+            List<int> tenantRoleIds, bool isTenantAdmin = false)
         {
             var status = new StatusGenericLocalizer<List<RoleToPermissions>>(_localizeDefault);
 
@@ -788,7 +789,9 @@ namespace AuthPermissions.AdminCode.Services
                     .Where(x => tenantRoleIds.Contains(x.RoleId))
                     .Distinct()
                     .ToListAsync()
-                : new List<RoleToPermissions>();
+                : (isTenantAdmin ?
+                await _context.RoleToPermissions.Where(x => x.RoleType == RoleTypes.TenantAdminAdd).ToListAsync()
+                : new List<RoleToPermissions>());
 
             if (foundRoles.Count != (tenantRoleIds?.Count ?? 0))
             {

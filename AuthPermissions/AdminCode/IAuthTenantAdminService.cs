@@ -131,8 +131,15 @@ namespace AuthPermissions.AdminCode
         /// NOTE: The Tenant checks that the role's <see cref="RoleToPermissions.RoleType"/> are valid for a tenant
         /// </summary>
         /// <param name="tenantRoleIds">List of role name. Can be null, which means no roles to add</param>
+        /// <param name="isTenantAdmin">If true, then it will return the TenantAdminAdd role if no roles are found</param>
         /// <returns>Status</returns>
-        Task<IStatusGeneric<List<RoleToPermissions>>> GetRolesWithChecksAsync(List<int> tenantRoleIds);
+        Task<IStatusGeneric<List<RoleToPermissions>>> GetRolesWithChecksAsync(List<int> tenantRoleIds, bool isTenantAdmin = false);
+
+        /// <summary>
+        /// This returns a query of all the child tenants of the given parent tenant
+        /// </summary>
+        /// <param name="parentTenantId"></param>
+        /// <returns></returns>
         Task<IQueryable<Tenant>> QueryChildTenants(int parentTenantId);
     }
 }
